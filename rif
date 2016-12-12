@@ -41,7 +41,7 @@ dev=$(zenity --list --title="$title" --radiolist --text "Select the drive that y
 
 part_ans=$(zenity --list --title="$title" --radiolist --text "How would you like to partition $dev?" --column Select --column Info FALSE Automatic FALSE Expert)
 
-if [ "part_ans" = "Automatic Partitioning"] 
+if [ "part_ans" = "Automatic"] 
 	then
 	# Find existing partitions (if any) to remove
 	parted -s $dev print | awk '/^ / {print $1}' > .del_parts.txt
