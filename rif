@@ -215,19 +215,23 @@ echo "# Installation Finished!"
 		-- title="$title" \
 
 # allowing user to select extra applications
+installapps() {
 extra=$(zenity --list --height=300 --title="$title" --radiolist --text "If you would like to select more applications to install,\nChoose the category from the list below.\nWhen you are finished selecting applications\nin each category you will be returned to this menu.\nThen simply select 'install' to start the install process." --column Select --column Category FALSE internet FALSE media FALSE office FALSE utilities FALSE install)
 
 if [ "$extra" = "internet" ]
-	then internetlist2.sh
+	then ./internetlist2.sh;installapps
 elif [ "$extra" = "media" ]
-	then medialist2.sh
+	then ./medialist2.sh;installapps
 elif [ "$extra" = "office" ]
-	then officelist2.sh
+	then ./officelist2.sh;installapps
 elif [ "$extra" = "utilities" ]
-	then utilslist2.sh
+	then ./utilslist2.sh;installapps
 else
-	installapps2.sh
+	./installapps2.sh
 fi
+}
+
+installapps
 
 
 
