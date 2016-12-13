@@ -39,8 +39,8 @@ dev=$(zenity --list --title="$title" --radiolist --text "Select the drive that y
 
 # Partitioning
 # Allow user to partition using gparted
-partyn=$(zenity --question --title="$title" --text "Do you need to partition $dev?\nSelect 'yes' to open gparted and partition\nthe disk or format partitions if needed.")
-if [ "$partyn" = "0" ]
+zenity --question --title="$title" --text "Do you need to partition $dev?\nSelect 'yes' to open gparted and partition\nthe disk or format partitions if needed."
+if [ "$?" = "0" ]
 	then gparted
 fi
 
