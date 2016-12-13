@@ -7,7 +7,7 @@
 int=` cat int2.txt `
 med=` cat med2.txt `
 off=` cat off2.txt `
-utils= ` cat utils.txt `
+utils=` cat utils.txt `
 
 
 # Installing Selecting Applications
