@@ -172,14 +172,27 @@ if [ "$?" = "1" ]
 fi
 
 (
+# sorting pacman mirrors
+echo "5"
+echo "# Sorting fastest pacman mirrors..."
+reflector --verbose -l 50 -p http --sort rate --save /etc/pacman.d/mirrorlist
+
+# updating pacman cache
+echo "10"
+echo "updating pacman databases..."
+pacman -Syy
+
+#installing base
 echo "20"
 echo "# Installing Base..."
 pacstrap /mnt base base-devel
 
+#generating fstab
 echo "50"
 echo "# Generating File System Table..."
 genfstab -U /mnt >> /mnt/etc/fstab
 
+#root password
 echo "50"
 echo "# Setting root password..."
 touch .passwd
@@ -187,6 +200,7 @@ echo -e "$rtpasswd\n$rtpasswd2" > .passwd
 arch_chroot "passwd root" < .passwd >/dev/null
 rm .passwd
 
+#adding user
 echo "55"
 echo "# Making new user..."
 arch_chroot "useradd -m -g users -G adm,lp,wheel,power,audio,video -s /bin/bash $username"
@@ -195,6 +209,7 @@ echo -e "$userpasswd\n$userpasswd2" > .passwd
 arch_chroot "passwd $username" < .passwd >/dev/null
 rm .passwd
 
+#setting locale
 echo "60"
 echo "# Generating Locale..."
 echo $locale >> /mnt/etc/locale.gen 
