@@ -67,11 +67,6 @@ fi
 		xargs -0 zenity --list --title="$title" --text="Choose a partition to use for the boot partition\nWarning, this list shows all available partitions on all available drives.\nPlease choose with care." \
 --radiolist --multiple --column ' ' --column 'Partitions')
 
-			if [[ $SYSTEM == "BIOS" ]]; then
-				mkfs.ext3 -q $boot_part 
-			else
-				mkfs.vfat -F32 -q $boot_part
-			fi
 		mkdir -p /mnt/boot
 		mount $boot_part /mnt/boot
 	
@@ -211,12 +206,28 @@ if [ "$?" = "0" ]
 	arch_chroot "grub-mkconfig -o /boot/grub/grub.cfg"
 fi
 
+# unmounting partitions
+umount -R /mnt
+
 echo "100"
 echo "# Installation Finished!"
 ) | zenity --progress \
 		-- title="$title" \
 
+# allowing user to select extra applications
+extra=$(zenity --list --height=300 --title="$title" --radiolist --text "If you would like to select more applications to install,\nChoose the category from the list below.\nWhen you are finished selecting applications\nin each category you will be returned to this menu.\nThen simply select 'install' to start the install process." --column Select --column Category FALSE internet FALSE media FALSE office FALSE utilities FALSE install)
 
+if [ "$extra" = "internet" ]
+	then internetlist2.sh
+elif [ "$extra" = "media" ]
+	then medialist2.sh
+elif [ "$extra" = "office" ]
+	then officelist2.sh
+elif [ "$extra" = "utilities" ]
+	then utilslist2.sh
+else
+	installapps2.sh
+fi
 
 
 
