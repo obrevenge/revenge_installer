@@ -10,28 +10,6 @@
 # or modify it as you wish.
 #
 
-# System Detection
-prepare() {
-if [[ -d "/sys/firmware/efi/" ]]; then
-      # Mount efivarfs if it is not already mounted
-      if [[ -z $(mount | grep /sys/firmware/efi/efivars) ]]; then
-        mount -t efivarfs efivarfs /sys/firmware/efi/efivars
-      fi
-      SYSTEM="UEFI"
-    else
-      SYSTEM="BIOS"
-fi
-
-
-# Setting variables
-title="Revenge Intaller Framework 0.04 $SYSTEM"
-
-# Adapted from AIS. An excellent bit of code!
-arch_chroot() {
-    arch-chroot /mnt /bin/bash -c "${1}"
-}  
-}
-
 # Selecting the Drive
 partition() {
 list=` lsblk -lno NAME,TYPE,SIZE,MOUNTPOINT | grep "disk" `
@@ -272,7 +250,26 @@ echo "# Installation Finished!"
 }
 
 # execution
-prepare
+# System Detection
+if [[ -d "/sys/firmware/efi/" ]]; then
+      # Mount efivarfs if it is not already mounted
+      if [[ -z $(mount | grep /sys/firmware/efi/efivars) ]]; then
+        mount -t efivarfs efivarfs /sys/firmware/efi/efivars
+      fi
+      SYSTEM="UEFI"
+    else
+      SYSTEM="BIOS"
+fi
+
+
+# Setting variables
+title="Revenge Intaller Framework 0.04 $SYSTEM"
+
+# Adapted from AIS. An excellent bit of code!
+arch_chroot() {
+    arch-chroot /mnt /bin/bash -c "${1}"
+}  
+
 partition
 configure
 root_password
