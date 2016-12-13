@@ -138,7 +138,7 @@ desktop=$(zenity --list --title="$title" --radiolist --text "What desktop would 
 
 
 # Installation
-zenity --question --title="$title" text "Please click yes to begin installation.\nClick no to abort installation.\nAll of the packages will be downloaded fresh, so installation\nmay take a few minutes." --height=40
+zenity --question --title="$title" --text "Please click yes to begin installation.\nClick no to abort installation.\nAll of the packages will be downloaded fresh, so installation\nmay take a few minutes." --height=40
 
 if [ "$?" = "1" ]
 	then exit
@@ -193,7 +193,7 @@ echo "%wheel ALL=(ALL) ALL" >> /mnt/etc/sudoers
 # installing video and audio packages
 echo "80"
 echo "# Installing Desktop, Sound, and Video Drivers..."
-pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fbdev xf86-video-glint xf86-video-i128 xf86-video-intel xf86-video-mach64 xf86-video-neomagic xf86-video-nouveau xf86-video-nv xf86-video-openchrome xf86-video-r128 xf86-video-savage xf86-video-siliconmotion xf86-video-sis xf86-video-tdfx xf86-video-trident xorg-server xorg-server-utils xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse intel-ucode yaourt
+pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fbdev xf86-video-glint xf86-video-i128 xf86-video-intel xf86-video-mach64 xf86-video-neomagic xf86-video-nouveau xf86-video-nv xf86-video-openchrome xf86-video-r128 xf86-video-savage xf86-video-siliconmotion xf86-video-sis xf86-video-tdfx xf86-video-trident xorg-server xorg-server-utils xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse intel-ucode yaourt networkmanager nm-connection-editor
 
 # installing chosen desktop
 pacstrap /mnt $desktop
@@ -215,8 +215,6 @@ echo "100"
 echo "# Installation Finished!"
 ) | zenity --progress \
 		-- title="$title" \
-		--percentage=10 \
-		--auto-close 
 
 
 
