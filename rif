@@ -26,7 +26,7 @@ title="Revenge Intaller Framework 0.04 $SYSTEM"
 
 # Adapted from AIS. An excellent bit of code!
 arch_chroot() {
-    arch-chroot $MOUNTPOINT /bin/bash -c "${1}"
+    arch-chroot /mnt /bin/bash -c "${1}"
 }  
 
 
@@ -39,7 +39,7 @@ dev=$(zenity --list --title="$title" --radiolist --text "Select the drive that y
 
 # Partitioning
 
-part_ans=$(zenity --list --title="$title" --radiolist --text "How would you like to partition $dev?" --column Select --column Info FALSE Automatic FALSE Expert)
+part_ans=$(zenity --list --title="$title" --radiolist --text "How would you like to partition $dev?\nAutomatic mode will delete all data on $dev and install Arch." --column Select --column Info FALSE Automatic FALSE Expert)
 
 if [ "$part_ans" = "Automatic" ] 
 	then
@@ -49,132 +49,132 @@ if [ "$part_ans" = "Automatic" ]
 	parted -s $dev rm ${del_part} 
 	done
  
- # Identify the partition table
-part_table=$(parted -s $dev print | grep -i 'partition table' | awk '{print $3}' >/dev/null 2>&1)
+ 	# Identify the partition table
+	part_table=$(parted -s $dev print | grep -i 'partition table' | awk '{print $3}' >/dev/null 2>&1)
  
-# Create partition table if one does not already exist
-([[ $SYSTEM == "BIOS" ]] && [[ $part_table != "msdos" ]]) && parted -s $dev mklabel msdos
-([[ $SYSTEM == "UEFI" ]] && [[ $part_table != "gpt" ]]) && parted -s $dev mklabel gpt   
+	# Create partition table if one does not already exist
+	([[ $SYSTEM == "BIOS" ]] && [[ $part_table != "msdos" ]]) && parted -s $dev mklabel msdos
+	([[ $SYSTEM == "UEFI" ]] && [[ $part_table != "gpt" ]]) && parted -s $dev mklabel gpt   
 
-# Create paritions (same basic partitioning scheme for BIOS and UEFI)
-if [[ $SYSTEM == "BIOS" ]]; then
-	parted -s $dev mkpart primary ext3 1MiB 513MiB 
-else
-	parted -s $dev mkpart ESP fat32 1MiB 513MiB 
-fi
-		
-parted -s $dev set 1 boot on 2>>/tmp/.errlog
-
-# Making swap partition
-swap_size=$(grep MemTotal /proc/meminfo | awk '{print $2/1024}' | sed 's/\..*//')
-boot=513
-end=[$swap_size + $boot]
-parted -s $dev mkpart linux-swap 513MiB $endMib
-
-# Making root partition
-parted -s $dev mkpart primary ext4 $endMiB 100%
-
-# Formatting Partitions
-mkfs.ext4 -q $dev3
-mkswap -q $dev2
-if [[ $SYSTEM == "BIOS" ]]; then
-	mkfs.ext3 -q $dev1 
-else
-	mkfs.vfat -F32 -q $dev1
-fi
-
-
-# Mounting Partitions
-mkdir -p /mnt/boot
-mount $dev3 /mnt
-mount $dev1 /mnt/boot
-
-else
-# Allow user to partition using gparted
-gparted
-
-# Select root partition
-root_part=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][0-9]"  | sort | awk '{ printf "FALSE""\0"$0"\0" }' | \
-xargs -0 zenity --list --title="$title" --text="Choose a partition to use for the root partition\nWarning, this list shows all available partitions on all available drives.\nPlease choose with care." \
---radiolist --multiple --column ' ' --column 'Partitions')
-
-zenity --question --title="$title" --text "Do you want to format $root_part?" --height=40
-	if [ "$?" = "0" ]
-	then mkfs.ext4 -q $root_part
-	fi
-mount $root_part /mnt
-	
-# Swap partition?
-zenity --question --title="$title" --text "Do you want to use a swap partition?" --height=40
-	if [ "$?" = "0" ]
-	then swap_part=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][0-9]"  | sort | awk '{ printf "FALSE""\0"$0"\0" }' | \
-xargs -0 zenity --list --title="$title" --text="Choose a partition to use for the swap partition\nWarning, this list shows all available partitions on all available drives.\nPlease choose with care." \
---radiolist --multiple --column ' ' --column 'Partitions')
-	mkswap $swap_part
-	fi
-	
-# Boot Partition?
-zenity --question --title="$title" --text "Do you want to use a seperate boot partition?" --height=40
-	if [ "$?" = "0" ]
-	then boot_part=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][0-9]"  | sort | awk '{ printf "FALSE""\0"$0"\0" }' | \
-xargs -0 zenity --list --title="$title" --text="Choose a partition to use for the boot partition\nWarning, this list shows all available partitions on all available drives.\nPlease choose with care." \
---radiolist --multiple --column ' ' --column 'Partitions')
-
+		# Create paritions (same basic partitioning scheme for BIOS and UEFI)
 		if [[ $SYSTEM == "BIOS" ]]; then
-			mkfs.ext3 -q $boot_part 
+			parted -s $dev mkpart primary ext3 1MiB 513MiB 
 		else
-			mkfs.vfat -F32 -q $boot_part
+			parted -s $dev mkpart primary fat32 1MiB 513MiB 
 		fi
+		
+	parted -s $dev set 1 boot on
+
+	# Making swap partition
+	swap_size=$(grep MemTotal /proc/meminfo | awk '{print $2/1024}' | sed 's/\..*//')
+	boot=513
+	end="$(($boot+$swap_size))"
+	parted -s $dev mkpart linux-swap 513MiB $endMib
+
+	# Making root partition
+	parted -s $dev mkpart primary ext4 100%
+
+		# Formatting Partitions
+		mkfs.ext4 -q $dev3
+		mkswap -q $dev2
+		if [[ $SYSTEM == "BIOS" ]]; then
+			mkfs.ext3 -q $dev1 
+		else
+			mkfs.vfat -F32 -q $dev1
+		fi
+
+
+	# Mounting Partitions
 	mkdir -p /mnt/boot
-	mount $boot_part /mnt/boot
-	
-	fi
-	
-# Home Partition?
-zenity --question --title="$title" --text "Do you want to use a seperate boot partition?" --height=40
-	if [ "$?" = "0" ]
-	then home_part=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][0-9]"  | sort | awk '{ printf "FALSE""\0"$0"\0" }' | \
-xargs -0 zenity --list --title="$title" --text="Choose a partition to use for the home partition\nWarning, this list shows all available partitions on all available drives.\nPlease choose with care." \
---radiolist --multiple --column ' ' --column 'Partitions')
-	zenity --question --title="$title" --text "Do you want to format $home_part?" --height=40
+	mount $dev3 /mnt
+	mount $dev1 /mnt/boot
+
+else
+	# Allow user to partition using gparted
+	gparted
+
+	# Select root partition
+	root_part=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][0-9]"  | sort | awk '{ printf "FALSE""\0"$0"\0" }' | \
+	xargs -0 zenity --list --title="$title" --text="Choose a partition to use for the root partition\nWarning, this list shows all available partitions on all available drives.\nPlease choose with care." \
+	--radiolist --multiple --column ' ' --column 'Partitions')
+
+	zenity --question --title="$title" --text "Do you want to format $root_part?" --height=40
 		if [ "$?" = "0" ]
-		then mkfs.ext4 -q $home_part
+		then mkfs.ext4 -q $root_part
 		fi
-	mkdir -p /mnt/home
-	mount $root_part /mnt/home
-	fi
+	mount $root_part /mnt
+	
+	# Swap partition?
+	zenity --question --title="$title" --text "Do you want to use a swap partition?" --height=40
+		if [ "$?" = "0" ]
+		then swap_part=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][0-9]"  | sort | awk '{ printf "FALSE""\0"$0"\0" }' | \ 
+		xargs -0 zenity --list --title="$title" --text="Choose a partition to use for the swap partition\nWarning, this list shows all available partitions on all available drives.\nPlease choose with care." \
+		--radiolist --multiple --column ' ' --column 'Partitions')
+		mkswap $swap_part
+		fi
+	
+	# Boot Partition?
+	zenity --question --title="$title" --text "Do you want to use a seperate boot partition?" --height=40
+		if [ "$?" = "0" ]
+		then boot_part=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][0-9]"  | sort | awk '{ printf "FALSE""\0"$0"\0" }' | \
+		xargs -0 zenity --list --title="$title" --text="Choose a partition to use for the boot partition\nWarning, this list shows all available partitions on all available drives.\nPlease choose with care." \
+--radiolist --multiple --column ' ' --column 'Partitions')
+
+			if [[ $SYSTEM == "BIOS" ]]; then
+				mkfs.ext3 -q $boot_part 
+			else
+				mkfs.vfat -F32 -q $boot_part
+			fi
+		mkdir -p /mnt/boot
+		mount $boot_part /mnt/boot
+	
+		fi
+	
+	# Home Partition?
+	zenity --question --title="$title" --text "Do you want to use a seperate boot partition?" --height=40
+		if [ "$?" = "0" ]
+		then home_part=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][0-9]"  | sort | awk '{ printf "FALSE""\0"$0"\0" }' | \
+		xargs -0 zenity --list --title="$title" --text="Choose a partition to use for the home partition\nWarning, this list shows all available partitions on all available drives.\nPlease choose with care." \
+		--radiolist --multiple --column ' ' --column 'Partitions')
+		zenity --question --title="$title" --text "Do you want to format $home_part?" --height=40
+			if [ "$?" = "0" ]
+			then mkfs.ext4 -q $home_part
+			fi
+		mkdir -p /mnt/home
+		mount $root_part /mnt/home
+		fi
 	
 fi
 
 # Getting Locale
 locales=$(cat /etc/locale.gen | grep -v "#  " | sed 's/#//g' | sed 's/ UTF-8//g' | grep .UTF-8 | sort | awk '{ printf "FALSE ""\0"$0"\0" }')
 
-locale=$(zenity --list --title="#title" --radiolist --text "Select your locale/language." --column Select --column Locale $locales --height=350)
+locale=$(zenity --list --title="$title" --radiolist --text "Select your locale/language." --column Select --column Locale $locales --height=350)
 
 # Getting Timezone
 zones=$(cat /usr/share/zoneinfo/zone.tab | awk '{print $3}' | grep "/" | sed "s/\/.*//g" | sort -ud | sort | awk '{ printf " FALSE ""\0"$0"\0" }')
 
-zone=$(zenity --list --title="$title" --radiolist --text "Select your country/zone." --column Select --column Zone $zones)
+zone=$(zenity --list --title="$title" --radiolist --text "Select your country/zone." --column Select --column Zone $zones --height=350)
 
 subzones=$(cat /usr/share/zoneinfo/zone.tab | awk '{print $3}' | grep "$zone/" | sed "s/$zone\///g" | sort -ud)
 
-subzone=$(zenity --list --title="$title" --radiolist --text "Select your sub-zone." --column Select --column Zone $subzones)
+subzone=$(zenity --list --title="$title" --radiolist --text "Select your sub-zone." --column Select --column Zone $subzones --height=350)
 
 # Getting Clock Preference
 clock=$(zenity --list --title="$title" --radiolist --text "Would you like to use UTC or Local Time\nUTC is recommended unless you are dual booting with Windows." --column Select --column Time TRUE utc FALSE localtime)
 
 # Getting hostname, username, root password, and user password
-hname=$(zenity --entry --text "Please enter a hostname for your system.\nIt must be in all lowercase letters." --entry-text "revenge")
+hname=$(zenity --entry --title="$title" --text "Please enter a hostname for your system.\nIt must be in all lowercase letters." --entry-text "revenge")
 
-username=$(zenity --entry --text "Please enter a username for the new user.\nAgain, in all lowercase." --entry-text "user")
+username=$(zenity --entry --title="$title" --text "Please enter a username for the new user.\nAgain, in all lowercase." --entry-text "user")
 
 root_password() {
 rtpasswd=$(zenity --entry --title="$title" --text "Please enter a root password." --entry-text "password")
 rtpasswd2=$(zenity --entry --title="$title" --text "Please re-enter your root password." --entry-text "password")
-if [ "$rtpasswd" != "$rtpasswd2" ]
+	if [ "$rtpasswd" != "$rtpasswd2" ]
 		then zenity --error --title="$title" --text "The passwords did not match, please try again." --height=40
 		root_password
-fi
+	fi
 }
 
 root_password
@@ -182,14 +182,14 @@ root_password
 user_password() {
 userpasswd=$(zenity --entry --title="$title" --text "Please enter a password for $username." --entry-text "password")
 userpasswd2=$(zenity --entry --title="$title" --text "Please re-enter a password for $username." --entry-text "password")
-if [ "$userpasswd" != "$userpasswd2" ]
+	if [ "$userpasswd" != "$userpasswd2" ]
 		then zenity --error --title="$title" --text "The passwords did not match, please try again." --height=40
 		user_password
-fi
+	fi
 }
 
 # Choosing Desktop
-desktop=$(zenity --list title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE gnome FALSE gnome-extra FALSE plasma FALSE kde-applications FALSE xfce4 FALSE xfce4-goodies FALSE lxde FALSE mate FALSE mate-extra)
+desktop=$(zenity --list title="$title" --checklist --text "What desktop(s) would you like to install?" --column Select --column Desktop FALSE gnome FALSE gnome-extra FALSE plasma FALSE kde-applications FALSE xfce4 FALSE xfce4-goodies FALSE lxde FALSE mate FALSE mate-extra)
 
 # Bootloader
 btloader=$(zenity --question title="$title" --text "Do you want to install the bootloader?\nThe answer to this is usually yes, unless you are\ndual-booting and plan to have another system handle\nthe boot process." --height=40)
@@ -243,6 +243,11 @@ pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fb
 
 # installing chosen desktop
 pacstrap /mnt $desktop
+pacstrap /mnt lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings
+
+# enabling services
+arch_chroot "systemctl enable lightdm.service"
+arch_chroot "systemctl enable NetworkManger.service"
 
 # installing bootloader
 if [ "$btloader" = "0" ]
@@ -250,10 +255,7 @@ if [ "$btloader" = "0" ]
 	arch_chroot "grub-install $dev"
 	arch_chroot "grub-mkconfig -o /boot/grub/grub.cfg"
 fi
-) | zenity --progress \
-	-- title="$title" \ 
-	--pulsate
-  --auto-close
+) | zenity --progress -- title="$title" --text "Installing..." --pulsate --auto-close
 
 
 
