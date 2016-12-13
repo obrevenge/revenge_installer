@@ -189,7 +189,7 @@ userpasswd2=$(zenity --entry --title="$title" --text "Please re-enter a password
 }
 
 # Choosing Desktop
-desktop=$(zenity --list title="$title" --checklist --text "What desktop(s) would you like to install?" --column Select --column Desktop FALSE gnome FALSE gnome-extra FALSE plasma FALSE kde-applications FALSE xfce4 FALSE xfce4-goodies FALSE lxde FALSE mate FALSE mate-extra)
+desktop=$(zenity --list --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE gnome FALSE gnome-extra FALSE plasma FALSE xfce4 FALSE xfce4-goodies FALSE lxde FALSE mate FALSE mate-extra)
 
 # Bootloader
 btloader=$(zenity --question title="$title" --text "Do you want to install the bootloader?\nThe answer to this is usually yes, unless you are\ndual-booting and plan to have another system handle\nthe boot process." --height=40)
