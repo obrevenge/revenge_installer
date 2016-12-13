@@ -1,1 +1,0 @@
-htop terminator gnome-disk-utility gparted synapse virtualbox gufw leafpad geany parcellite grsync guake 
