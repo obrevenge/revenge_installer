@@ -131,8 +131,40 @@ user_password
 # Choosing Desktop
 desktop=$(zenity --list --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE gnome FALSE gnome-extra FALSE plasma FALSE xfce4 FALSE xfce4-goodies FALSE lxde FALSE mate FALSE mate-extra)
 
+# allowing user to select extra applications
+installapps() {
+extra=$(zenity --list --height=300 --title="$title" --radiolist --text "If you would like to select more applications to install,\nChoose the category from the list below.\nWhen you are finished selecting applications\nin each category you will be returned to this menu.\nThen simply select 'finished' when you are finished." --column Select --column Category FALSE internet FALSE media FALSE office FALSE utilities FALSE finished)
+
+if [ "$extra" = "internet" ]
+	then ./revenge_installer/internetlist2.sh;installapps
+elif [ "$extra" = "media" ]
+	then ./revenge_installer/medialist2.sh;installapps
+elif [ "$extra" = "office" ]
+	then ./revenge_installer/officelist2.sh;installapps
+elif [ "$extra" = "utilities" ]
+	then ./revenge_installer/utilslist2.sh;installapps
+else
+	bootloader
+fi
+}
+
+installapps
+
+
+# bootloader?
+bootloader() {
+zenity --question title="$title" --text "Do you want to install the bootloader?\nThe answer to this is usually yes, unless you are\ndual-booting and plan to have another system handle\nthe boot process." --height=40
+
+if [ "$?" = "0" ]
+	then echo "yes" > answer.txt
+	else echo "no" > answer.txt
+fi
+btloader=` cat answer.txt `
+install
+}
 
 # Installation
+install() {
 zenity --question --title="$title" --text "Please click yes to begin installation.\nClick no to abort installation.\nAll of the packages will be downloaded fresh, so installation\nmay take a few minutes." --height=40
 
 if [ "$?" = "1" ]
@@ -144,18 +176,18 @@ echo "20"
 echo "# Installing Base..."
 pacstrap /mnt base base-devel
 
-echo "60"
+echo "50"
 echo "# Generating File System Table..."
 genfstab -U /mnt >> /mnt/etc/fstab
 
-echo "65"
+echo "50"
 echo "# Setting root password..."
 touch .passwd
 echo -e "$rtpasswd\n$rtpasswd2" > .passwd
 arch_chroot "passwd root" < .passwd >/dev/null
 rm .passwd
 
-echo "65"
+echo "55"
 echo "# Making new user..."
 arch_chroot "useradd -m -g users -G adm,lp,wheel,power,audio,video -s /bin/bash $username"
 touch .passwd
@@ -163,7 +195,7 @@ echo -e "$userpasswd\n$userpasswd2" > .passwd
 arch_chroot "passwd $username" < .passwd >/dev/null
 rm .passwd
 
-echo "70"
+echo "60"
 echo "# Generating Locale..."
 echo $locale >> /mnt/etc/locale.gen 
 arch_chroot "locale-gen"
@@ -186,7 +218,7 @@ arch_chroot "echo $hname > /etc/hostname"
 echo "%wheel ALL=(ALL) ALL" >> /mnt/etc/sudoers
 
 # installing video and audio packages
-echo "80"
+echo "70"
 echo "# Installing Desktop, Sound, and Video Drivers..."
 pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fbdev xf86-video-glint xf86-video-i128 xf86-video-intel xf86-video-mach64 xf86-video-neomagic xf86-video-nouveau xf86-video-nv xf86-video-openchrome xf86-video-r128 xf86-video-savage xf86-video-siliconmotion xf86-video-sis xf86-video-tdfx xf86-video-trident xorg-server xorg-server-utils xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse intel-ucode yaourt networkmanager nm-connection-editor
 
@@ -194,14 +226,20 @@ pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fb
 pacstrap /mnt $desktop
 pacstrap /mnt lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings
 
+# installing chosen software
+echo "80"
+echo "# Installing chosen software packages..."
+./revenge_installer/installapps2.sh
+
 # enabling services
-arch_chroot "systemctl enable lightdm.service"
-arch_chroot "systemctl enable NetworkManger.service"
+arch_chroot "systemctl enable lightdm"
+arch_chroot "systemctl enable NetworkManger"
 
 # installing bootloader
-zenity --question title="$title" --text "Do you want to install the bootloader?\nThe answer to this is usually yes, unless you are\ndual-booting and plan to have another system handle\nthe boot process." --height=40
-if [ "$?" = "0" ]
-	then pacstrap /mnt grub os-prober
+if [ "$btloader" = "yes" ]
+	then echo "90"
+	echo "Installing Bootloader..."
+	pacstrap /mnt grub os-prober
 	arch_chroot "grub-install $dev"
 	arch_chroot "grub-mkconfig -o /boot/grub/grub.cfg"
 fi
@@ -213,25 +251,8 @@ echo "100"
 echo "# Installation Finished!"
 ) | zenity --progress \
 		-- title="$title" \
-
-# allowing user to select extra applications
-installapps() {
-extra=$(zenity --list --height=300 --title="$title" --radiolist --text "If you would like to select more applications to install,\nChoose the category from the list below.\nWhen you are finished selecting applications\nin each category you will be returned to this menu.\nThen simply select 'install' to start the install process." --column Select --column Category FALSE internet FALSE media FALSE office FALSE utilities FALSE install)
-
-if [ "$extra" = "internet" ]
-	then ./internetlist2.sh;installapps
-elif [ "$extra" = "media" ]
-	then ./medialist2.sh;installapps
-elif [ "$extra" = "office" ]
-	then ./officelist2.sh;installapps
-elif [ "$extra" = "utilities" ]
-	then ./utilslist2.sh;installapps
-else
-	./installapps2.sh
-fi
 }
 
-installapps
 
 
 
