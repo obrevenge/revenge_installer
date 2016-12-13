@@ -39,7 +39,7 @@ dev=$(zenity --list --title="$title" --radiolist --text "Select the drive that y
 
 # Partitioning
 # Allow user to partition using gparted
-zenity --question --title="$title" --text "Do you need to partition $dev?\nSelect 'yes' to open gparted and partition\nthe disk or format partitions if needed."
+zenity --question --title="$title" --text "Do you need to partition $dev?\nSelect 'yes' to open gparted and partition\nthe disk or format partitions if needed.\nThe installer will not format the partitions after this,\nso if your partitions need to be formatted please select yes\nand use gparted to format them now."
 if [ "$?" = "0" ]
 	then gparted
 fi
@@ -48,11 +48,7 @@ fi
 	root_part=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][0-9]"  | sort | awk '{ printf "FALSE""\0"$0"\0" }' | \
 	xargs -0 zenity --list --title="$title" --text="Choose a partition to use for the root partition\nWarning, this list shows all available partitions on all available drives.\nPlease choose with care." \
 	--radiolist --multiple --column ' ' --column 'Partitions')
-
-	zenity --question --title="$title" --text "Do you want to format $root_part?" --height=40
-		if [ "$?" = "0" ]
-		then mkfs.ext4 -q $root_part
-		fi
+	#mounting root partition
 	mount $root_part /mnt
 	
 	# Swap partition?
@@ -82,15 +78,12 @@ fi
 		fi
 	
 	# Home Partition?
-	zenity --question --title="$title" --text "Do you want to use a seperate boot partition?" --height=40
+	zenity --question --title="$title" --text "Do you want to use a seperate home partition?" --height=40
 		if [ "$?" = "0" ]
 		then home_part=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][0-9]"  | sort | awk '{ printf "FALSE""\0"$0"\0" }' | \
 		xargs -0 zenity --list --title="$title" --text="Choose a partition to use for the home partition\nWarning, this list shows all available partitions on all available drives.\nPlease choose with care." \
 		--radiolist --multiple --column ' ' --column 'Partitions')
-		zenity --question --title="$title" --text "Do you want to format $home_part?" --height=40
-			if [ "$?" = "0" ]
-			then mkfs.ext4 -q $home_part
-			fi
+		# mounting home partition
 		mkdir -p /mnt/home
 		mount $root_part /mnt/home
 		fi
@@ -143,8 +136,6 @@ user_password
 # Choosing Desktop
 desktop=$(zenity --list --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE gnome FALSE gnome-extra FALSE plasma FALSE xfce4 FALSE xfce4-goodies FALSE lxde FALSE mate FALSE mate-extra)
 
-# Bootloader
-btloader=$(zenity --question title="$title" --text "Do you want to install the bootloader?\nThe answer to this is usually yes, unless you are\ndual-booting and plan to have another system handle\nthe boot process." --height=40)
 
 # Installation
 zenity --question --title="$title" text "Please click yes to begin installation.\nClick no to abort installation.\nAll of the packages will be downloaded fresh, so installation\nmay take a few minutes." --height=40
@@ -154,18 +145,22 @@ if [ "$?" = "1" ]
 fi
 
 (
+echo "20"
 echo "# Installing Base..."
 pacstrap /mnt base base-devel
 
+echo "60"
 echo "# Generating File System Table..."
 genfstab -U /mnt >> /mnt/etc/fstab
 
+echo "65"
 echo "# Setting root password..."
 touch .passwd
 echo -e "$rtpasswd\n$rtpasswd2" > .passwd
 arch_chroot "passwd root" < .passwd >/dev/null
 rm .passwd
 
+echo "65"
 echo "# Making new user..."
 arch_chroot "useradd -m -g users -G adm,lp,wheel,power,audio,video -s /bin/bash $username"
 touch .passwd
@@ -173,6 +168,7 @@ echo -e "$userpasswd\n$userpasswd2" > .passwd
 arch_chroot "passwd $username" < .passwd >/dev/null
 rm .passwd
 
+echo "70"
 echo "# Generating Locale..."
 echo $locale >> /mnt/etc/locale.gen 
 arch_chroot "locale-gen"
@@ -195,6 +191,7 @@ arch_chroot "echo $hname > /etc/hostname"
 echo "%wheel ALL=(ALL) ALL" >> /mnt/etc/sudoers
 
 # installing video and audio packages
+echo "80"
 echo "# Installing Desktop, Sound, and Video Drivers..."
 pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fbdev xf86-video-glint xf86-video-i128 xf86-video-intel xf86-video-mach64 xf86-video-neomagic xf86-video-nouveau xf86-video-nv xf86-video-openchrome xf86-video-r128 xf86-video-savage xf86-video-siliconmotion xf86-video-sis xf86-video-tdfx xf86-video-trident xorg-server xorg-server-utils xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse intel-ucode yaourt
 
@@ -207,12 +204,19 @@ arch_chroot "systemctl enable lightdm.service"
 arch_chroot "systemctl enable NetworkManger.service"
 
 # installing bootloader
-if [ "$btloader" = "0" ]
+zenity --question title="$title" --text "Do you want to install the bootloader?\nThe answer to this is usually yes, unless you are\ndual-booting and plan to have another system handle\nthe boot process." --height=40
+if [ "$?" = "0" ]
 	then pacstrap /mnt grub os-prober
 	arch_chroot "grub-install $dev"
 	arch_chroot "grub-mkconfig -o /boot/grub/grub.cfg"
 fi
-) | zenity --progress -- title="$title" --text "Installing..." --pulsate --auto-close
+
+echo "100"
+echo "# Installation Finished!"
+) | zenity --progress \
+		-- title="$title" \
+		--percentage=10 \
+		--auto-close 
 
 
 
