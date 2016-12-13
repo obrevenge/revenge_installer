@@ -34,6 +34,10 @@ arch_chroot() {
 
 # Selecting the Drive
 partition() {
+list=` lsblk -lno NAME,TYPE,SIZE,MOUNTPOINT | grep "disk" `
+
+zenity --info --title="$title" --text "Below is a list of the available drives on your system:\n\n$list" --height=10 width=150
+
 lsblk -lno NAME,TYPE | grep 'disk' | awk '{print "/dev/" $1 " " $2}' | sort -u > devices.txt
 sed -i 's/\<disk\>//g' devices.txt
 devices=` awk '{print "FALSE " $0}' devices.txt `
@@ -163,7 +167,7 @@ btloader=` cat answer.txt `
 }
 
 # Installation
-install() {
+installing() {
 zenity --question --title="$title" --text "Please click yes to begin installation.\nClick no to abort installation.\nAll of the packages will be downloaded fresh, so installation\nmay take a few minutes." --height=40
 
 if [ "$?" = "1" ]
@@ -264,7 +268,7 @@ umount -R /mnt
 echo "100"
 echo "# Installation Finished!"
 ) | zenity --progress \
-		-- title="$title" \
+		-- title="$title"
 }
 
 # execution
@@ -276,7 +280,7 @@ user_password
 desktop
 installapps
 bootloader
-install
+installing
 
 
 
