@@ -11,6 +11,7 @@
 #
 
 # System Detection
+prepare() {
 if [[ -d "/sys/firmware/efi/" ]]; then
       # Mount efivarfs if it is not already mounted
       if [[ -z $(mount | grep /sys/firmware/efi/efivars) ]]; then
@@ -21,6 +22,7 @@ if [[ -d "/sys/firmware/efi/" ]]; then
       SYSTEM="BIOS"
 fi
 
+
 # Setting variables
 title="Revenge Intaller Framework 0.04 $SYSTEM"
 
@@ -28,9 +30,10 @@ title="Revenge Intaller Framework 0.04 $SYSTEM"
 arch_chroot() {
     arch-chroot /mnt /bin/bash -c "${1}"
 }  
-
+}
 
 # Selecting the Drive
+partition() {
 lsblk -lno NAME,TYPE | grep 'disk' | awk '{print "/dev/" $1 " " $2}' | sort -u > devices.txt
 sed -i 's/\<disk\>//g' devices.txt
 devices=` awk '{print "FALSE " $0}' devices.txt `
@@ -82,8 +85,9 @@ fi
 		mkdir -p /mnt/home
 		mount $root_part /mnt/home
 		fi
-	
+}	
 
+configure() {
 # Getting Locale
 locales=$(cat /etc/locale.gen | grep -v "#  " | sed 's/#//g' | sed 's/ UTF-8//g' | grep .UTF-8 | sort | awk '{ printf "FALSE ""\0"$0"\0" }')
 
@@ -105,6 +109,7 @@ clock=$(zenity --list --title="$title" --radiolist --text "Would you like to use
 hname=$(zenity --entry --title="$title" --text "Please enter a hostname for your system.\nIt must be in all lowercase letters." --entry-text "revenge")
 
 username=$(zenity --entry --title="$title" --text "Please enter a username for the new user.\nAgain, in all lowercase." --entry-text "user")
+}
 
 root_password() {
 rtpasswd=$(zenity --entry --title="$title" --text "Please enter a root password." --entry-text "password")
@@ -115,7 +120,6 @@ rtpasswd2=$(zenity --entry --title="$title" --text "Please re-enter your root pa
 	fi
 }
 
-root_password
 
 user_password() {
 userpasswd=$(zenity --entry --title="$title" --text "Please enter a password for $username." --entry-text "password")
@@ -126,10 +130,11 @@ userpasswd2=$(zenity --entry --title="$title" --text "Please re-enter a password
 	fi
 }
 
-user_password
 
+desktop() {
 # Choosing Desktop
 desktop=$(zenity --list --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE gnome FALSE gnome-extra FALSE plasma FALSE xfce4 FALSE xfce4-goodies FALSE lxde FALSE mate FALSE mate-extra)
+}
 
 # allowing user to select extra applications
 installapps() {
@@ -143,13 +148,8 @@ elif [ "$extra" = "office" ]
 	then ./revenge_installer/officelist2.sh;installapps
 elif [ "$extra" = "utilities" ]
 	then ./revenge_installer/utilslist2.sh;installapps
-else
-	bootloader
 fi
 }
-
-installapps
-
 
 # bootloader?
 bootloader() {
@@ -160,7 +160,6 @@ if [ "$?" = "0" ]
 	else echo "no" > answer.txt
 fi
 btloader=` cat answer.txt `
-install
 }
 
 # Installation
@@ -268,14 +267,16 @@ echo "# Installation Finished!"
 		-- title="$title" \
 }
 
-
-
-
-
-
-
-
-
+# execution
+prepare
+partition
+configure
+root_password
+user_password
+desktop
+installapps
+bootloader
+install
 
 
 
