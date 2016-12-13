@@ -38,60 +38,11 @@ devices=` awk '{print "FALSE " $0}' devices.txt `
 dev=$(zenity --list --title="$title" --radiolist --text "Select the drive that you want to use for installation." --column Drive --column Info $devices)
 
 # Partitioning
-
-part_ans=$(zenity --list --title="$title" --radiolist --text "How would you like to partition $dev?\nAutomatic mode will delete all data on $dev and install Arch." --column Select --column Info FALSE Automatic FALSE Expert)
-
-if [ "$part_ans" = "Automatic" ] 
-	then
-	# Find existing partitions (if any) to remove
-	parted -s $dev print | awk '/^ / {print $1}' > .del_parts.txt
-	for del_part in $(tac .del_parts.txt); do
-	parted -s $dev rm ${del_part} 
-	done
- 
- 	# Identify the partition table
-	part_table=$(parted -s $dev print | grep -i 'partition table' | awk '{print $3}' >/dev/null 2>&1)
- 
-	# Create partition table if one does not already exist
-	([[ $SYSTEM == "BIOS" ]] && [[ $part_table != "msdos" ]]) && parted -s $dev mklabel msdos
-	([[ $SYSTEM == "UEFI" ]] && [[ $part_table != "gpt" ]]) && parted -s $dev mklabel gpt   
-
-		# Create paritions (same basic partitioning scheme for BIOS and UEFI)
-		if [[ $SYSTEM == "BIOS" ]]; then
-			parted -s $dev mkpart primary ext3 1MiB 513MiB 
-		else
-			parted -s $dev mkpart primary fat32 1MiB 513MiB 
-		fi
-		
-	parted -s $dev set 1 boot on
-
-	# Making swap partition
-	swap_size=$(grep MemTotal /proc/meminfo | awk '{print $2/1024}' | sed 's/\..*//')
-	boot=513
-	end="$(($boot+$swap_size))"
-	parted -s $dev mkpart linux-swap 513MiB $endMib
-
-	# Making root partition
-	parted -s $dev mkpart primary ext4 100%
-
-		# Formatting Partitions
-		mkfs.ext4 -q $dev3
-		mkswap -q $dev2
-		if [[ $SYSTEM == "BIOS" ]]; then
-			mkfs.ext3 -q $dev1 
-		else
-			mkfs.vfat -F32 -q $dev1
-		fi
-
-
-	# Mounting Partitions
-	mkdir -p /mnt/boot
-	mount $dev3 /mnt
-	mount $dev1 /mnt/boot
-
-else
-	# Allow user to partition using gparted
-	gparted
+# Allow user to partition using gparted
+partyn=$(zenity --question --title="$title" --text "Do you need to partition $dev?\nSelect 'yes' to open gparted and partition\nthe disk or format partitions if needed.")
+if [ "$partyn" = "0" ]
+	then gparted
+fi
 
 	# Select root partition
 	root_part=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][0-9]"  | sort | awk '{ printf "FALSE""\0"$0"\0" }' | \
@@ -107,9 +58,9 @@ else
 	# Swap partition?
 	zenity --question --title="$title" --text "Do you want to use a swap partition?" --height=40
 		if [ "$?" = "0" ]
-		then swap_part=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][0-9]"  | sort | awk '{ printf "FALSE""\0"$0"\0" }' | \ 
-		xargs -0 zenity --list --title="$title" --text="Choose a partition to use for the swap partition\nWarning, this list shows all available partitions on all available drives.\nPlease choose with care." \
-		--radiolist --multiple --column ' ' --column 'Partitions')
+		then swap_part=$(find /dev -mindepth 1 -maxdepth 1  -name "*[sh]d[a-z][0-9]"  | sort | awk '{ printf "FALSE""\0"$0"\0" }' | \
+	xargs -0 zenity --list --title="$title" --text="Choose a partition to use for the swap partition\nWarning, this list shows all available partitions on all available drives.\nPlease choose with care." \
+	--radiolist --multiple --column ' ' --column 'Partitions')
 		mkswap $swap_part
 		fi
 	
@@ -144,7 +95,6 @@ else
 		mount $root_part /mnt/home
 		fi
 	
-fi
 
 # Getting Locale
 locales=$(cat /etc/locale.gen | grep -v "#  " | sed 's/#//g' | sed 's/ UTF-8//g' | grep .UTF-8 | sort | awk '{ printf "FALSE ""\0"$0"\0" }')
@@ -188,6 +138,8 @@ userpasswd2=$(zenity --entry --title="$title" --text "Please re-enter a password
 	fi
 }
 
+user_password
+
 # Choosing Desktop
 desktop=$(zenity --list --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE gnome FALSE gnome-extra FALSE plasma FALSE xfce4 FALSE xfce4-goodies FALSE lxde FALSE mate FALSE mate-extra)
 
@@ -195,7 +147,12 @@ desktop=$(zenity --list --title="$title" --radiolist --text "What desktop would 
 btloader=$(zenity --question title="$title" --text "Do you want to install the bootloader?\nThe answer to this is usually yes, unless you are\ndual-booting and plan to have another system handle\nthe boot process." --height=40)
 
 # Installation
-zenity --info --title="$title" text "Please click to begin installation.\nAll of the packages will be downloaded fresh, so installation\nmay take a few minutes." --height=40
+zenity --question --title="$title" text "Please click yes to begin installation.\nClick no to abort installation.\nAll of the packages will be downloaded fresh, so installation\nmay take a few minutes." --height=40
+
+if [ "$?" = "1" ]
+	then exit
+fi
+
 (
 echo "# Installing Base..."
 pacstrap /mnt base base-devel
