@@ -222,23 +222,23 @@ pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fb
 pacstrap /mnt $desktop
 pacstrap /mnt lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings
 
-# installing chosen software
-echo "80"
-echo "# Installing chosen software packages..."
-./revenge_installer/installapps2.sh
-
 # enabling services
 arch_chroot "systemctl enable lightdm"
 arch_chroot "systemctl enable NetworkManger"
 
 # installing bootloader
 if [ "$btloader" = "yes" ]
-	then echo "90"
-	echo "Installing Bootloader..."
-	pacstrap /mnt grub os-prober
+	then echo "80"
+	echo "# Installing Bootloader..."
+	pacstrap /mnt grub
 	arch_chroot "grub-install $dev"
 	arch_chroot "grub-mkconfig -o /boot/grub/grub.cfg"
 fi
+
+# installing chosen software
+echo "90"
+echo "# Installing chosen software packages..."
+./revenge_installer/installapps2.sh
 
 # unmounting partitions
 umount -R /mnt
