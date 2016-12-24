@@ -147,8 +147,8 @@ username=$(zenity --entry --title="$title" --text "Please enter a username for t
 }
 
 root_password() {
-rtpasswd=$(zenity --entry --title="$title" --text "Please enter a root password." --entry-text "password")
-rtpasswd2=$(zenity --entry --title="$title" --text "Please re-enter your root password." --entry-text "password")
+rtpasswd=$(zenity --entry --title="$title" --text "Please enter a root password." --entry-text "password" --hide-text)
+rtpasswd2=$(zenity --entry --title="$title" --text "Please re-enter your root password." --entry-text "password" --hide-text)
 	if [ "$rtpasswd" != "$rtpasswd2" ]
 		then zenity --error --title="$title" --text "The passwords did not match, please try again." --height=40
 		root_password
@@ -157,8 +157,8 @@ rtpasswd2=$(zenity --entry --title="$title" --text "Please re-enter your root pa
 
 
 user_password() {
-userpasswd=$(zenity --entry --title="$title" --text "Please enter a password for $username." --entry-text "password")
-userpasswd2=$(zenity --entry --title="$title" --text "Please re-enter a password for $username." --entry-text "password")
+userpasswd=$(zenity --entry --title="$title" --text "Please enter a password for $username." --entry-text "password" --hide-text)
+userpasswd2=$(zenity --entry --title="$title" --text "Please re-enter a password for $username." --entry-text "password" --hide-text)
 	if [ "$userpasswd" != "$userpasswd2" ]
 		then zenity --error --title="$title" --text "The passwords did not match, please try again." --height=40
 		user_password
@@ -264,7 +264,7 @@ echo "%wheel ALL=(ALL) ALL" >> /mnt/etc/sudoers
 # installing video and audio packages
 echo "70"
 echo "# Installing Desktop, Sound, and Video Drivers..."
-pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fbdev xf86-video-glint xf86-video-i128 xf86-video-intel xf86-video-mach64 xf86-video-neomagic xf86-video-nouveau xf86-video-nv xf86-video-openchrome xf86-video-r128 xf86-video-savage xf86-video-siliconmotion xf86-video-sis xf86-video-tdfx xf86-video-trident xorg-server xorg-server-utils xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse intel-ucode networkmanager nm-connection-editor network-manager-applet
+pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fbdev xf86-video-glint xf86-video-i128 xf86-video-intel xf86-video-mach64 xf86-video-neomagic xf86-video-nouveau xf86-video-nv xf86-video-openchrome xf86-video-r128 xf86-video-savage xf86-video-siliconmotion xf86-video-sis xf86-video-tdfx xf86-video-trident xorg-server xorg-server-utils xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse intel-ucode b42-fwcutter networkmanager nm-connection-editor network-manager-applet
 
 # installing chosen desktop
 pacstrap /mnt $desktop
