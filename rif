@@ -188,7 +188,7 @@ fi
 
 # bootloader?
 bootloader() {
-zenity --question title="$title" --text "Do you want to install the bootloader?\nThe answer to this is usually yes, unless you are\ndual-booting and plan to have another system handle\nthe boot process." --height=40
+zenity --question --title="$title" --text "Do you want to install the bootloader?\nThe answer to this is usually yes, unless you are\ndual-booting and plan to have another system handle\nthe boot process." --height=40
 
 if [ "$?" = "0" ]
 	then echo "yes" > answer.txt
@@ -334,7 +334,8 @@ arch_chroot() {
 Parted() {
 	parted --script $dev "$1"
 }
-
+# Greeting the user
+zenity --question --title="$title" --text "Welcome to the Revenge Installer.\n\nNext you will be prompted with a series of questions that will\nguide you through installing Arch Linux.\nYou will be asked if you want to use manual or auto partitioning.\nIf you select auto partitioning the drive that you select will be completely deleted\nand Arch will be installed. If you select manual, you will have the opportunity to partition the disk yourself\nand select which partitons to use for installation.\nClick 'yes' to begin or 'no' to exit." --height=50
 partition
 configure
 root_password
