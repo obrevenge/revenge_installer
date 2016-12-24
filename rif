@@ -90,24 +90,24 @@ auto_partition() {
 	Parted "mklabel gpt"
 	Parted "mkpart primary ESP fat32 1MiB 513MiB"
 	Parted "set 1 boot on"
-	Parted "mkpart primary linux-swap 513MiB {$num}MiB"
-	Parted "mkpart primary ext4 {$num}MiB 100%"
-	mkfs.fat -F32 {$dev}1
-	mkswap {$dev}2
-	swapon {$dev}2
-	mkfs.ext4 {$dev}3
+	Parted "mkpart primary linux-swap 513MiB ${num}MiB"
+	Parted "mkpart primary ext4 ${num}MiB 100%"
+	mkfs.fat -F32 ${dev}1
+	mkswap ${dev}2
+	swapon ${dev}2
+	mkfs.ext4 ${dev}3
 	mkdir -p /mnt/boot
-	mount {$dev}3 /mnt
-	mount {$dev}1 /mnt/boot
+	mount ${dev}3 /mnt
+	mount ${dev}1 /mnt/boot
 	else
 	Parted "mklabel msdos"
-	Parted "mkpart primary linux-swap 1MiB {$ram}MiB"
-	Parted "mkpart primary ext4 {$ram}MiB 100%"
+	Parted "mkpart primary linux-swap 1MiB ${ram}MiB"
+	Parted "mkpart primary ext4 ${ram}MiB 100%"
 	Parted "set 2 boot on"
-	mkswap {$dev}1
-	swapon {$dev}1
-	mkfs.ext4 {$dev}2
-	mount {$dev}2 /mnt
+	mkswap ${dev}1
+	swapon ${dev}1
+	mkfs.ext ${dev}2
+	mount ${dev}2 /mnt
 	fi
 }	
 
