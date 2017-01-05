@@ -244,10 +244,10 @@ rm .passwd
 #setting locale
 echo "60"
 echo "# Generating Locale..."
-echo $locale >> /mnt/etc/locale.gen 
+echo "LANG=\"${locale}\"" > mnt/etc/locale.conf
+sed -i "s/#${locale}/${locale}/" mnt/etc/locale.gen 
 arch_chroot "locale-gen"
-echo $locale > /mnt/etc/locale.conf
-export LANG=$locale
+export LANG=${locale}
 
 #setting timezone
 echo "# Setting Timezone..."
@@ -267,7 +267,7 @@ echo "%wheel ALL=(ALL) ALL" >> /mnt/etc/sudoers
 # installing video and audio packages
 echo "70"
 echo "# Installing Desktop, Sound, and Video Drivers..."
-pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fbdev xf86-video-glint xf86-video-i128 xf86-video-intel xf86-video-mach64 xf86-video-neomagic xf86-video-nouveau xf86-video-nv xf86-video-openchrome xf86-video-r128 xf86-video-savage xf86-video-siliconmotion xf86-video-sis xf86-video-tdfx xf86-video-trident xorg-server xorg-server-utils xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse intel-ucode b43-fwcutter networkmanager nm-connection-editor network-manager-applet
+pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fbdev xf86-video-glint xf86-video-i128 xf86-video-intel xf86-video-mach64 xf86-video-neomagic xf86-video-nouveau xf86-video-nv xf86-video-openchrome xf86-video-r128 xf86-video-savage xf86-video-siliconmotion xf86-video-sis xf86-video-tdfx xf86-video-trident xorg-server xorg-server-utils xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse intel-ucode b43-fwcutter networkmanager nm-connection-editor network-manager-applet polkit-gnome gksu
 
 # installing chosen desktop
 pacstrap /mnt $desktop
@@ -290,7 +290,7 @@ fi
 arch_chroot "systemctl enable NetworkManager"
 
 # running mkinit
-echo "$ Running mkinitcpio..."
+echo "# Running mkinitcpio..."
 arch_chroot "mkinitcpio -p linux"
 
 # installing bootloader
