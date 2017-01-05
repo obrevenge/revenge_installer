@@ -43,6 +43,7 @@ fi
 	xargs -0 zenity --list --title="$title" --text="Choose a partition to use for the swap partition\nWarning, this list shows all available partitions on all available drives.\nPlease choose with care." \
 	--radiolist --multiple --column ' ' --column 'Partitions')
 		mkswap $swap_part
+		swapon $swap_part
 		fi
 	
 	# Boot Partition?
@@ -87,6 +88,7 @@ auto_partition() {
 	
 	if [ "$SYSTEM" = "UEFI" ]
 	then
+	dd if=/dev/zero of=$dev bs=512 count=1
 	Parted "mklabel gpt"
 	Parted "mkpart primary ESP fat32 1MiB 513MiB"
 	Parted "set 1 boot on"
@@ -95,18 +97,19 @@ auto_partition() {
 	mkfs.fat -F32 ${dev}1
 	mkswap ${dev}2
 	swapon ${dev}2
-	mkfs.ext4 ${dev}3
+	mkfs.ext4 -F ${dev}3
 	mkdir -p /mnt/boot
 	mount ${dev}3 /mnt
 	mount ${dev}1 /mnt/boot
 	else
+	dd if=/dev/zero of=$dev bs=512 count=1
 	Parted "mklabel msdos"
 	Parted "mkpart primary linux-swap 1MiB ${ram}MiB"
 	Parted "mkpart primary ext4 ${ram}MiB 100%"
 	Parted "set 2 boot on"
 	mkswap ${dev}1
 	swapon ${dev}1
-	mkfs.ext ${dev}2
+	mkfs.ext4 -F ${dev}2
 	mount ${dev}2 /mnt
 	fi
 }	
@@ -264,7 +267,7 @@ echo "%wheel ALL=(ALL) ALL" >> /mnt/etc/sudoers
 # installing video and audio packages
 echo "70"
 echo "# Installing Desktop, Sound, and Video Drivers..."
-pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fbdev xf86-video-glint xf86-video-i128 xf86-video-intel xf86-video-mach64 xf86-video-neomagic xf86-video-nouveau xf86-video-nv xf86-video-openchrome xf86-video-r128 xf86-video-savage xf86-video-siliconmotion xf86-video-sis xf86-video-tdfx xf86-video-trident xorg-server xorg-server-utils xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse intel-ucode b42-fwcutter networkmanager nm-connection-editor network-manager-applet
+pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fbdev xf86-video-glint xf86-video-i128 xf86-video-intel xf86-video-mach64 xf86-video-neomagic xf86-video-nouveau xf86-video-nv xf86-video-openchrome xf86-video-r128 xf86-video-savage xf86-video-siliconmotion xf86-video-sis xf86-video-tdfx xf86-video-trident xorg-server xorg-server-utils xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse intel-ucode b43-fwcutter networkmanager nm-connection-editor network-manager-applet
 
 # installing chosen desktop
 pacstrap /mnt $desktop
@@ -284,7 +287,11 @@ if [ "$desktop" = "gnome" ]
 fi
 
 # enabling network manager
-arch_chroot "systemctl enable NetworkManger"
+arch_chroot "systemctl enable NetworkManager"
+
+# running mkinit
+echo "$ Running mkinitcpio..."
+arch_chroot "mkinitcpio -p linux"
 
 # installing bootloader
 if [ "$btloader" = "yes" ]
