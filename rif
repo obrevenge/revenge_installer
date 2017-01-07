@@ -244,8 +244,8 @@ rm .passwd
 #setting locale
 echo "60"
 echo "# Generating Locale..."
-echo "LANG=\"${locale}\"" > mnt/etc/locale.conf
-sed -i "s/#${locale}/${locale}/" mnt/etc/locale.gen 
+echo "LANG=\"${locale}\"" > /mnt/etc/locale.conf
+echo "${locale} UTF-8" > /mnt/etc/locale.gen 
 arch_chroot "locale-gen"
 export LANG=${locale}
 
