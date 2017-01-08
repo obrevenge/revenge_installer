@@ -88,29 +88,33 @@ auto_partition() {
 	
 	if [ "$SYSTEM" = "UEFI" ]
 	then
+	( echo "# Creating Partitions..."
 	dd if=/dev/zero of=$dev bs=512 count=1
 	Parted "mklabel gpt"
 	Parted "mkpart primary ESP fat32 1MiB 513MiB"
 	Parted "set 1 boot on"
-	Parted "mkpart primary linux-swap 513MiB ${num}MiB"
-	Parted "mkpart primary ext4 ${num}MiB 100%"
+	Parted "mkpart primary ext4 513MiB 100%"
 	mkfs.fat -F32 ${dev}1
-	mkswap ${dev}2
-	swapon ${dev}2
-	mkfs.ext4 -F ${dev}3
+	fallocate -l ${ram}M /swapfile
+	chmod 600 /swapfile
+	mkswap /swapfile
+	swapon /swapfile
+	mkfs.ext4 -F ${dev}2
 	mkdir -p /mnt/boot
-	mount ${dev}3 /mnt
-	mount ${dev}1 /mnt/boot
+	mount ${dev}2 /mnt
+	mount ${dev}1 /mnt/boot) | zenity --progress --title="$title" --width=450 --pulsate --auto-close
 	else
+	(echo "# Creating Partitions..."
 	dd if=/dev/zero of=$dev bs=512 count=1
 	Parted "mklabel msdos"
-	Parted "mkpart primary linux-swap 1MiB ${ram}MiB"
-	Parted "mkpart primary ext4 ${ram}MiB 100%"
-	Parted "set 2 boot on"
-	mkswap ${dev}1
-	swapon ${dev}1
-	mkfs.ext4 -F ${dev}2
-	mount ${dev}2 /mnt
+	Parted "mkpart primary ext4 1MiB 100%"
+	Parted "set 1 boot on"
+	fallocate -l ${ram}M /swapfile
+	chmod 600 /swapfile
+	mkswap /swapfile
+	swapon /swapfile
+	mkfs.ext4 -F ${dev}1
+	mount ${dev}1 /mnt) | zenity --progress --title="$title" --width=450 --pulsate --auto-close
 	fi
 }	
 
@@ -129,16 +133,16 @@ configure() {
 # Getting Locale
 locales=$(cat /etc/locale.gen | grep -v "#  " | sed 's/#//g' | sed 's/ UTF-8//g' | grep .UTF-8 | sort | awk '{ printf "FALSE ""\0"$0"\0" }')
 
-locale=$(zenity --list --title="$title" --radiolist --text "Select your locale/language." --column Select --column Locale $locales --height=350)
+locale=$(zenity --list --title="$title" --radiolist --text "Select your locale/language." --column Select --column Locale $locales --height=350 --width=300)
 
 # Getting Timezone
 zones=$(cat /usr/share/zoneinfo/zone.tab | awk '{print $3}' | grep "/" | sed "s/\/.*//g" | sort -ud | sort | awk '{ printf " FALSE ""\0"$0"\0" }')
 
-zone=$(zenity --list --title="$title" --radiolist --text "Select your country/zone." --column Select --column Zone $zones --height=350)
+zone=$(zenity --list --title="$title" --radiolist --text "Select your country/zone." --column Select --column Zone $zones --height=350 --width=300)
 
 subzones=$(cat /usr/share/zoneinfo/zone.tab | awk '{print $3}' | grep "$zone/" | sed "s/$zone\///g" | sort -ud)
 
-subzone=$(zenity --list --title="$title" --radiolist --text "Select your sub-zone." --column Select --column Zone $subzones --height=350)
+subzone=$(zenity --list --title="$title" --radiolist --text "Select your sub-zone." --column Select --column Zone $subzones --height=350 --width=300)
 
 # Getting Clock Preference
 clock=$(zenity --list --title="$title" --radiolist --text "Would you like to use UTC or Local Time\nUTC is recommended unless you are dual booting with Windows." --column Select --column Time TRUE utc FALSE localtime)
@@ -150,8 +154,8 @@ username=$(zenity --entry --title="$title" --text "Please enter a username for t
 }
 
 root_password() {
-rtpasswd=$(zenity --entry --title="$title" --text "Please enter a root password." --entry-text "password" --hide-text)
-rtpasswd2=$(zenity --entry --title="$title" --text "Please re-enter your root password." --entry-text "password" --hide-text)
+rtpasswd=$(zenity --entry --title="$title" --text "Please enter a root password." --hide-text)
+rtpasswd2=$(zenity --entry --title="$title" --text "Please re-enter your root password." --hide-text)
 	if [ "$rtpasswd" != "$rtpasswd2" ]
 		then zenity --error --title="$title" --text "The passwords did not match, please try again." --height=40
 		root_password
@@ -160,8 +164,8 @@ rtpasswd2=$(zenity --entry --title="$title" --text "Please re-enter your root pa
 
 
 user_password() {
-userpasswd=$(zenity --entry --title="$title" --text "Please enter a password for $username." --entry-text "password" --hide-text)
-userpasswd2=$(zenity --entry --title="$title" --text "Please re-enter a password for $username." --entry-text "password" --hide-text)
+userpasswd=$(zenity --entry --title="$title" --text "Please enter a password for $username." --hide-text)
+userpasswd2=$(zenity --entry --title="$title" --text "Please re-enter a password for $username." --hide-text)
 	if [ "$userpasswd" != "$userpasswd2" ]
 		then zenity --error --title="$title" --text "The passwords did not match, please try again." --height=40
 		user_password
@@ -210,22 +214,18 @@ fi
 
 (
 # sorting pacman mirrors
-echo "5"
 echo "# Sorting fastest pacman mirrors..."
 reflector --verbose -l 50 -p http --sort rate --save /etc/pacman.d/mirrorlist
 
 #installing base
-echo "20"
 echo "# Installing Base..."
 pacstrap /mnt base base-devel
 
 #generating fstab
-echo "50"
 echo "# Generating File System Table..."
 genfstab -U /mnt >> /mnt/etc/fstab
 
 #root password
-echo "50"
 echo "# Setting root password..."
 touch .passwd
 echo -e "$rtpasswd\n$rtpasswd2" > .passwd
@@ -233,7 +233,6 @@ arch_chroot "passwd root" < .passwd >/dev/null
 rm .passwd
 
 #adding user
-echo "55"
 echo "# Making new user..."
 arch_chroot "useradd -m -g users -G adm,lp,wheel,power,audio,video -s /bin/bash $username"
 touch .passwd
@@ -242,7 +241,6 @@ arch_chroot "passwd $username" < .passwd >/dev/null
 rm .passwd
 
 #setting locale
-echo "60"
 echo "# Generating Locale..."
 echo "LANG=\"${locale}\"" > /mnt/etc/locale.conf
 echo "${locale} UTF-8" > /mnt/etc/locale.gen 
@@ -265,9 +263,8 @@ arch_chroot "echo $hname > /etc/hostname"
 echo "%wheel ALL=(ALL) ALL" >> /mnt/etc/sudoers
 
 # installing video and audio packages
-echo "70"
 echo "# Installing Desktop, Sound, and Video Drivers..."
-pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fbdev xf86-video-glint xf86-video-i128 xf86-video-intel xf86-video-mach64 xf86-video-neomagic xf86-video-nouveau xf86-video-nv xf86-video-openchrome xf86-video-r128 xf86-video-savage xf86-video-siliconmotion xf86-video-sis xf86-video-tdfx xf86-video-trident xorg-server xorg-server-utils xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse intel-ucode b43-fwcutter networkmanager nm-connection-editor network-manager-applet polkit-gnome gksu
+pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fbdev xf86-video-glint xf86-video-i128 xf86-video-intel xf86-video-mach64 xf86-video-neomagic xf86-video-nouveau xf86-video-nv xf86-video-openchrome xf86-video-r128 xf86-video-savage xf86-video-siliconmotion xf86-video-sis xf86-video-tdfx xf86-video-trident xorg-server xorg-server-utils xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse intel-ucode b43-fwcutter networkmanager nm-connection-editor network-manager-applet polkit-gnome gksu ttf-dejavu
 
 # installing chosen desktop
 pacstrap /mnt $desktop
@@ -295,25 +292,22 @@ arch_chroot "mkinitcpio -p linux"
 
 # installing bootloader
 if [ "$btloader" = "yes" ]
-	then echo "80"
-	echo "# Installing Bootloader..."
-	pacstrap /mnt grub
+	then echo "# Installing Bootloader..."
+	pacstrap /mnt grub efitools
 	arch_chroot "grub-install $dev"
 	arch_chroot "grub-mkconfig -o /boot/grub/grub.cfg"
 fi
 
 # installing chosen software
-echo "90"
 echo "# Installing chosen software packages..."
 ./revenge_installer/installapps2.sh
 
 # unmounting partitions
 umount -R /mnt
 
-echo "100"
 echo "# Installation Finished!"
-) | zenity --progress \
-		-- title="$title"
+) | zenity --progress --title="$title" --width=450 --pulsate
+
 }
 
 # execution
