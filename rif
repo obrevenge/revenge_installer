@@ -95,10 +95,10 @@ auto_partition() {
 	Parted "set 1 boot on"
 	Parted "mkpart primary ext4 513MiB 100%"
 	mkfs.fat -F32 ${dev}1
-	fallocate -l ${ram}M /swapfile
-	chmod 600 /swapfile
-	mkswap /swapfile
-	swapon /swapfile
+	fallocate -l ${ram}M /mnt/swapfile
+	chmod 600 /mnt/swapfile
+	mkswap /mnt/swapfile
+	swapon /mnt/swapfile
 	mkfs.ext4 -F ${dev}2
 	mkdir -p /mnt/boot
 	mount ${dev}2 /mnt
@@ -109,10 +109,10 @@ auto_partition() {
 	Parted "mklabel msdos"
 	Parted "mkpart primary ext4 1MiB 100%"
 	Parted "set 1 boot on"
-	fallocate -l ${ram}M /swapfile
-	chmod 600 /swapfile
-	mkswap /swapfile
-	swapon /swapfile
+	fallocate -l ${ram}M /mnt/swapfile
+	chmod 600 /mnt/swapfile
+	mkswap /mnt/swapfile
+	swapon /mnt/swapfile
 	mkfs.ext4 -F ${dev}1
 	mount ${dev}1 /mnt) | zenity --progress --title="$title" --width=450 --pulsate --auto-close
 	fi
