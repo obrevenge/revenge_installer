@@ -105,7 +105,7 @@ auto_partition() {
 	mkfs.ext4 -F ${dev}2
 	mkdir -p /mnt/boot
 	mount ${dev}2 /mnt
-	mount ${dev}1 /mnt/boot) | zenity --progress --title="$title" --width=450 --pulsate --auto-close
+	mount ${dev}1 /mnt/boot) | zenity --progress --title="$title" --width=450 --pulsate --auto-close --no-cancel
 	else
 	(echo "# Creating Partitions..."
 	dd if=/dev/zero of=$dev bs=512 count=1
@@ -117,7 +117,7 @@ auto_partition() {
 	mkswap /mnt/swapfile
 	swapon /mnt/swapfile
 	mkfs.ext4 -F ${dev}1
-	mount ${dev}1 /mnt) | zenity --progress --title="$title" --width=450 --pulsate --auto-close
+	mount ${dev}1 /mnt) | zenity --progress --title="$title" --width=450 --pulsate --auto-close --no-cancel
 	fi
 }	
 
@@ -378,7 +378,7 @@ pacstrap /mnt $utils
 umount -R /mnt
 
 echo "# Installation Finished!"
-) | zenity --progress --title="$title" --width=450 --pulsate
+) | zenity --progress --title="$title" --width=450 --pulsate --no-cancel
 
 }
 
