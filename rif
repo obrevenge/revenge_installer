@@ -284,6 +284,7 @@ arch_chroot "locale-gen"
 export LANG=${locale}
 
 #setting keymap
+mkdir -p /mnt/etc/X11/xorg.conf.d/
 echo -e "Section "\"InputClass"\"\nIdentifier "\"system-keyboard"\"\nMatchIsKeyboard "\"on"\"\nOption "\"XkbLayout"\" "\"${keymap}"\"\nEndSection" > /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
 
 #setting timezone
@@ -308,9 +309,7 @@ pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fb
 # virtualbox
 if [ "$vbox" = "yes" ]
 	then pacstrap /mnt virtualbox-guest-modules-arch virtualbox-guest-utils
-            arch_chroot "modprobe -a vboxguest vboxsf vboxvideo"  
-            arch_chroot "systemctl enable vboxservice"
-            echo -e "vboxguest\nvboxsf\nvboxvideo" > /mnt/etc/modules-load.d/virtualbox.conf
+        echo -e "vboxguest\nvboxsf\nvboxvideo" > /mnt/etc/modules-load.d/virtualbox.conf
 fi
 
 # installing chosen desktop
