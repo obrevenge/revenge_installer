@@ -185,12 +185,6 @@ userpasswd2=$(zenity --entry --title="$title" --text "Please re-enter a password
 	fi
 }
 
-kernel() {
-kernel=$(zenity --list --title="$title" --height=550 --text "There are several kernels available for the system.\n\nThere is the current linux kernel.\nThis kernel is the most up to date, providing the best hardware support.\nHowever, there could be possible bugs in this kernel, despite testing.\n\nThe linux-lts kernel provides a focus on stability.\nIt is based on an older kernel, so it may lack some newer features.\n\nThe linux-grsec kernel is focused on security\nIt contains the Grsecurity Patchset and PaX for increased security.\n\nThe linux-zen kernel is the result of a collaboration of kernel hackers\nto provide the best possible kernel for everyday systems.\n\nPlease select the kernel that you would like to install." --radiolist --column "Select" --column "Kernel" FALSE linux FALSE linux-lts FALSE linux-grsec FALSE linux-zen FALSE "exit")
-
-}
-
-
 desktop() {
 # Choosing Desktop
 desktop=$(zenity --list --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE "gnome" FALSE "gnome gnome-extra" FALSE "plasma" FALSE "xfce4" FALSE "xfce4 xfce4-goodies" FALSE "lxde" FALSE "mate" FALSE "mate mate-extra")
@@ -261,15 +255,7 @@ reflector --verbose -l 50 -p http --sort rate --save /etc/pacman.d/mirrorlist
 
 #installing base
 echo "# Installing Base..."
-if [ "$kernel" = "linux" ]
-	then pacstrap /mnt base base-devel
-	elif [ "$kernel" = "linux-lts" ]
-	then pacstrap /mnt $(pacman -Sqg base | sed 's/^\(linux\)$/\1-lts/') base-devel
-	elif [ "$kernel" = "linux-grsec" ]
-	then pacstrap /mnt $(pacman -Sqg base | sed 's/^\(linux\)$/\1-grsec/') base-devel
-	elif [ "$kernel" = "linux-zen" ]
-	then pacstrap /mnt $(pacman -Sqg base | sed 's/^\(linux\)$/\1-zen/') base-devel
-fi
+pacstrap /mnt base base-devel
 
 #generating fstab
 echo "# Generating File System Table..."
@@ -389,7 +375,7 @@ if [[ -d "/sys/firmware/efi/" ]]; then
       if [[ -z $(mount | grep /sys/firmware/efi/efivars) ]]; then
         mount -t efivarfs efivarfs /sys/firmware/efi/efivars
       fi
-      SYSTEM="UEFI"
+      SYSTEM="UEFI";zenity --error --title="$title" --text "I'm sorry, the Revenge Installer does not\ncurrently support UEFI. Development continues, so check back soon.";exit
     else
       SYSTEM="BIOS"
 fi
@@ -414,7 +400,6 @@ partition
 configure
 root_password
 user_password
-kernel
 desktop
 installapps
 bootloader
