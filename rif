@@ -303,6 +303,8 @@ if [ "$desktop" = "gnome" ]
 	then arch_chroot "systemctl enable gdm.service"
 	elif [ "$desktop" = "lxde" ]
 	then arch_chroot "systemctl enable lxdm.service"
+	elif [ "$desktop" = "plasma" ]
+	then pacstrap /mnt sddm;arch_chroot "systemctl enable sddm.service"
 	else
 	pacstrap /mnt lightdm lightdm-gtk-greeter
 	arch_chroot "systemctl enable lightdm.service"
