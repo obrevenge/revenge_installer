@@ -110,14 +110,13 @@ auto_partition() {
 	(echo "# Creating Partitions..."
 	dd if=/dev/zero of=$dev bs=512 count=1
 	Parted "mklabel msdos"
-	Parted "mkpart primary ext4 1MiB 100%"
-	Parted "set 1 boot on"
-	fallocate -l ${ram}M /mnt/swapfile
-	chmod 600 /mnt/swapfile
-	mkswap /mnt/swapfile
-	swapon /mnt/swapfile
-	mkfs.ext4 -F ${dev}1
-	mount ${dev}1 /mnt) | zenity --progress --title="$title" --width=450 --pulsate --auto-close --no-cancel
+	Parted "mkpart primary linux-swap 1MiB ${ram}MiB"
+	Parted "mkpart primary ext4 ${ram}MiB 100%"
+	Parted "set 2 boot on"
+	mkswap ${dev}1
+	swapon ${dev}1
+	mkfs.ext4 -F ${dev}2
+	mount ${dev}2 /mnt) | zenity --progress --title="$title" --width=450 --pulsate --auto-close --no-cancel
 	fi
 }	
 
