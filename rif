@@ -9,7 +9,10 @@
 # as published by the Free Software Foundation. So feel free to copy, distribute,
 # or modify it as you wish.
 #
-
+# Special Recognition to Carl Duff, as some code was adapted from the Architect Installer
+# Special Recognition to 'angeltoast' as some code was adapted from the Feliz Installer
+#
+#
 # Selecting the Drive
 man_partition() {
 list=` lsblk -lno NAME,TYPE,SIZE,MOUNTPOINT | grep "disk" `
