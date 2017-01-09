@@ -140,11 +140,17 @@ clock=$(zenity --list --title="$title" --radiolist --text "Would you like to use
 hname=$(zenity --entry --title="$title" --text "Please enter a hostname for your system.\nIt must be in all lowercase letters." --entry-text "revenge")
 
 username=$(zenity --entry --title="$title" --text "Please enter a username for the new user.\nAgain, in all lowercase." --entry-text "user")
+}
 
+vbox() {
 graphics=$(lspci | grep -i "vga" | sed 's/.*://' | sed 's/(.*//' | sed 's/^[ \t]*//')
 if [[ $(echo $graphics | grep -i 'virtualbox') != "" ]]
 	then vbox=$(zenity --list --title="$title" --radiolist --text "The Revenge Installer has detected that you are currently running in Virtualbox.\nWould you like to install Virtualbox Utilities to the installed system?" --column Select --column Choice TRUE yes FALSE no)
 fi
+}
+
+archuserrepo() {
+aur=$(zenity --list --title="$title" --radiolist --text "Would you like to install support for the Arch User Repository 'yaourt'?" --column Select --column Choice TRUE yes FALSE no)
 }
 
 root_password() {
@@ -313,6 +319,14 @@ fi
 # enabling network manager
 arch_chroot "systemctl enable NetworkManager"
 
+# AUR
+if [ "$aur" = "yes" ]
+	then rm /mnt/etc/pacman.conf
+	cp /etc/pacman.conf /mnt/etc/pacman.conf
+	pacstrap /mnt yaourt
+
+fi
+
 # running mkinit
 echo "# Running mkinitcpio..."
 arch_chroot "mkinitcpio -p linux"
@@ -378,6 +392,8 @@ partition
 configure
 root_password
 user_password
+vbox
+archuserrepo
 desktop
 installapps
 bootloader
