@@ -298,7 +298,7 @@ echo "%wheel ALL=(ALL) ALL" >> /mnt/etc/sudoers
 
 # installing video and audio packages
 echo "# Installing Desktop, Sound, and Video Drivers..."
-pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fbdev xf86-video-glint xf86-video-i128 xf86-video-intel xf86-video-mach64 xf86-video-neomagic xf86-video-nouveau xf86-video-nv xf86-video-openchrome xf86-video-r128 xf86-video-savage xf86-video-siliconmotion xf86-video-sis xf86-video-tdfx xf86-video-trident xorg-server xorg-server-utils xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse intel-ucode b43-fwcutter networkmanager nm-connection-editor network-manager-applet polkit-gnome gksu ttf-dejavu gnome-keyring
+pacstrap /mnt mesa xf86-video-vmware xf86-video-ark xf86-video-ati xf86-video-fbdev xf86-video-glint xf86-video-i128 xf86-video-intel xf86-video-mach64 xf86-video-neomagic xf86-video-nouveau xf86-video-nv xf86-video-openchrome xf86-video-r128 xf86-video-savage xf86-video-siliconmotion xf86-video-sis xf86-video-tdfx xf86-video-trident xorg-server xorg-server-utils xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse intel-ucode b43-fwcutter networkmanager nm-connection-editor network-manager-applet polkit-gnome gksu ttf-dejavu gnome-keyring xdg-user-dirs
 
 # virtualbox
 if [ "$vbox" = "yes" ]
