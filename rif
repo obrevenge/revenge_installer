@@ -321,8 +321,9 @@ arch_chroot "systemctl enable NetworkManager"
 
 # AUR
 if [ "$aur" = "yes" ]
-	then rm /mnt/etc/pacman.conf
-	cp /etc/pacman.conf /mnt/etc/pacman.conf
+	then echo "[archlinuxfr]" >> /mnt/etc/pacman.conf
+	echo "SigLevel = Never" >> /mnt/etc/pacman.conf
+	echo "Server = http://repo.archlinux.fr/\$arch" >> /mnt/etc/pacman.conf
 	arch_chroot "pacman -Syy"
 	arch_chroot "pacman -S --noconfirm yaourt"
 
