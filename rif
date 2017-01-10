@@ -179,6 +179,10 @@ userpasswd2=$(zenity --entry --title="$title" --text "Please re-enter a password
 	fi
 }
 
+cups() {
+print=$(zenity --list --title="$title" --radiolist --text "Would you like to install printer support?" --column Select --column Choice FALSE "yes" FALSE "no")
+}
+
 desktop() {
 # Choosing Desktop
 desktop=$(zenity --list --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE "gnome" FALSE "gnome gnome-extra" FALSE "plasma" FALSE "plasma kde-applications" FALSE "xfce4" FALSE "xfce4 xfce4-goodies" FALSE "lxde" FALSE "mate" FALSE "mate mate-extra")
@@ -309,6 +313,11 @@ fi
 # installing chosen desktop
 pacstrap /mnt $desktop
 
+# cups
+if [ "$print" = "yes" ]
+	then pacstrap /mnt cups ghostscript gsfonts
+fi
+
 # starting desktop manager
 if [ "$desktop" = "gnome" ]
 	then arch_chroot "systemctl enable gdm.service"
@@ -405,6 +414,7 @@ root_password
 user_password
 vbox
 archuserrepo
+cups
 desktop
 installapps
 bootloader
