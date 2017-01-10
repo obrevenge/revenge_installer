@@ -174,7 +174,7 @@ userpasswd2=$(zenity --entry --title="$title" --text "Please re-enter a password
 
 desktop() {
 # Choosing Desktop
-desktop=$(zenity --list --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE "gnome" FALSE "gnome gnome-extra" FALSE "plasma" FALSE "xfce4" FALSE "xfce4 xfce4-goodies" FALSE "lxde" FALSE "mate" FALSE "mate mate-extra")
+desktop=$(zenity --list --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE "gnome" FALSE "gnome gnome-extra" FALSE "plasma" FALSE "plasma kde-applications" FALSE "xfce4" FALSE "xfce4 xfce4-goodies" FALSE "lxde" FALSE "mate" FALSE "mate mate-extra")
 }
 
 # internet app list 
@@ -310,6 +310,8 @@ if [ "$desktop" = "gnome" ]
 	elif [ "$desktop" = "lxde" ]
 	then arch_chroot "systemctl enable lxdm.service"
 	elif [ "$desktop" = "plasma" ]
+	then pacstrap /mnt sddm;arch_chroot "systemctl enable sddm.service"
+	elif [ "$desktop" = "plasma kde-applications" ]
 	then pacstrap /mnt sddm;arch_chroot "systemctl enable sddm.service"
 	else
 	pacstrap /mnt lightdm lightdm-gtk-greeter
