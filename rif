@@ -394,7 +394,7 @@ fi
 
 
 # Setting variables
-title="Revenge Intaller Framework 0.04 $SYSTEM"
+title="Revenge Intaller Framework 0.05 $SYSTEM"
 
 # Adapted from AIS. An excellent bit of code!
 arch_chroot() {
