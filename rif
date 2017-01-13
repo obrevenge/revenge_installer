@@ -185,7 +185,7 @@ print=$(zenity --list --title="$title" --radiolist --text "Would you like to ins
 
 desktop() {
 # Choosing Desktop
-desktop=$(zenity --list --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE "gnome" FALSE "gnome gnome-extra" FALSE "plasma" FALSE "plasma kde-applications" FALSE "xfce4" FALSE "xfce4 xfce4-goodies" FALSE "lxde" FALSE "mate" FALSE "mate mate-extra")
+desktop=$(zenity --list --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE "gnome" FALSE "gnome gnome-extra" FALSE "plasma" FALSE "plasma kde-applications" FALSE "xfce4" FALSE "xfce4 xfce4-goodies" FALSE "lxde" FALSE "mate" FALSE "mate mate-extra" FALSE "mate-gtk3" FALSE "mate-gtk3 mate-extra-gtk3")
 }
 
 # internet app list 
@@ -208,7 +208,7 @@ sed -i -e 's/[|]//g' off2.txt
 
 # utility app list
 utility_apps() {
-zenity --list --title="$title" --text "Select the Utility Applications that You Would Like to Install" --checklist --column "Select" --column "Applications" FALSE "htop " FALSE "terminator " FALSE "gnome-disk-utility " FALSE "gparted " FALSE "synapse " FALSE "virtualbox " FALSE "gufw " FALSE "leafpad " FALSE "geany " FALSE "parcellite " FALSE "grsync " FALSE "guake " --height 400 > utils.txt
+zenity --list --title="$title" --text "Select the Utility Applications that You Would Like to Install" --checklist --column "Select" --column "Applications" FALSE "htop " FALSE "terminator " FALSE "gnome-disk-utility " FALSE "gparted " FALSE "synapse " FALSE "virtualbox " FALSE "gufw " FALSE "leafpad " FALSE "geany " FALSE "parcellite " FALSE "grsync " FALSE "guake " FALSE "ntfs-3g" FALSE "gptfdisk" --height 400 > utils.txt
 sed -i -e 's/[|]//g' utils.txt
 }
 
@@ -394,7 +394,7 @@ fi
 
 
 # Setting variables
-title="Revenge Intaller Framework 0.05 $SYSTEM"
+title="Revenge Intaller Framework 0.06 $SYSTEM"
 
 # Adapted from AIS. An excellent bit of code!
 arch_chroot() {
