@@ -253,7 +253,7 @@ reflector --verbose -l 50 -p http --sort rate --save /etc/pacman.d/mirrorlist
 
 #installing base
 echo "# Installing Base..."
-pacstrap /mnt base base-devel
+pacstrap /mnt base base-devel grub
 
 #generating fstab
 echo "# Generating File System Table..."
@@ -354,8 +354,7 @@ arch_chroot "mkinitcpio -p linux"
 # installing bootloader
 if [ "$btloader" = "yes" ]
 	then echo "# Installing Bootloader..."
-	pacstrap /mnt grub
-	arch_chroot "grub-install $dev"
+	arch_chroot "grub-install --target=i386-pc $dev"
 	arch_chroot "grub-mkconfig -o /boot/grub/grub.cfg"
 fi
 
