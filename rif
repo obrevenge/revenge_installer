@@ -446,6 +446,10 @@ Parted() {
 # Greeting the user
 zenity --question --title="$title" --text "Welcome to the Revenge Installer.\n\nNext you will be prompted with a series of questions that will\nguide you through installing Arch Linux.\nYou will be asked if you want to use manual or auto partitioning.\nIf you select auto partitioning the drive that you select will be completely deleted\nand Arch will be installed. If you select manual, you will have the opportunity to partition the disk yourself\nand select which partitons to use for installation.\nClick 'yes' to begin or 'no' to exit." --height=50
 
+if [ "$?" = "1" ]
+	then exit
+fi
+
 partition
 configure
 root_password
