@@ -94,13 +94,18 @@ auto_partition() {
 	# Find total amount of RAM
 	ram=$(grep MemTotal /proc/meminfo | awk '{print $2/1024}' | sed 's/\..*//')
 	# Find where swap partition stops
-	num=$(($ram + 513))
+	num=4000
+	
+	if [ "$ram" -gt "$num" ]
+		then swap_space=4096
+		else swap_space=$ram
+	fi
 	
 	(echo "# Creating Partitions..."
 	dd if=/dev/zero of=$dev bs=512 count=1
 	Parted "mklabel msdos"
-	Parted "mkpart primary linux-swap 1MiB ${ram}MiB"
-	Parted "mkpart primary ext4 ${ram}MiB 100%"
+	Parted "mkpart primary linux-swap 1MiB ${swap_space}MiB"
+	Parted "mkpart primary ext4 ${swap_space}MiB 100%"
 	Parted "set 2 boot on"
 	mkswap ${dev}1
 	swapon ${dev}1
@@ -156,6 +161,10 @@ if [[ $(echo $graphics | grep -i 'virtualbox') != "" ]]
 fi
 }
 
+kernel() {
+kernel=$(zenity --list --title="$title" --height=550 --text "There are several kernels available for the system.\n\nThe most common is the current linux kernel.\nThis kernel is the most up to date, providing the best hardware support.\nHowever, there could be possible bugs in this kernel, despite testing.\n\nThe linux-lts kernel provides a focus on stability.\nIt is based on an older kernel, so it may lack some newer features.\n\nThe linux-grsec kernel is focused on security\nIt contains the Grsecurity Patchset and PaX for increased security.\n\nThe linux-zen kernel is the result of a collaboration of kernel hackers\nto provide the best possible kernel for everyday systems.\n\nPlease select the kernel that you would like to install." --radiolist --column "Select" --column "Kernel" FALSE linux FALSE linux-lts FALSE linux-grsec FALSE linux-zen)
+}
+
 archuserrepo() {
 aur=$(zenity --list --title="$title" --radiolist --text "Would you like to install support for the Arch User Repository 'yaourt'?" --column Select --column Choice TRUE yes FALSE no)
 }
@@ -185,7 +194,7 @@ print=$(zenity --list --title="$title" --radiolist --text "Would you like to ins
 
 desktop() {
 # Choosing Desktop
-desktop=$(zenity --list --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE "gnome" FALSE "gnome gnome-extra" FALSE "plasma" FALSE "plasma kde-applications" FALSE "xfce4" FALSE "xfce4 xfce4-goodies" FALSE "lxde" FALSE "mate" FALSE "mate mate-extra" FALSE "mate-gtk3" FALSE "mate-gtk3 mate-extra-gtk3")
+desktop=$(zenity --list --height=550 --width=450 --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE "gnome" FALSE "gnome gnome-extra" FALSE "plasma" FALSE "plasma kde-applications" FALSE "xfce4" FALSE "xfce4 xfce4-goodies" FALSE "lxde" FALSE "mate" FALSE "mate mate-extra" FALSE "mate-gtk3" FALSE "mate-gtk3 mate-extra-gtk3" FALSE "budgie-desktop" FALSE "cinnamon" FALSE "deepin" FALSE "enlightenment" FALSE "i3-wm i3lock i3status" FALSE "openbox tint2 openbox-themes")
 }
 
 # internet app list 
@@ -229,13 +238,14 @@ fi
 
 # bootloader?
 bootloader() {
-zenity --question --title="$title" --text "Do you want to install the bootloader?\nThe answer to this is usually yes, unless you are\ndual-booting and plan to have another system handle\nthe boot process." --height=40
+lsblk -lno NAME,TYPE | grep 'disk' | awk '{print "/dev/" $1 " " $2}' | sort -u > devices.txt
+sed -i 's/\<disk\>//g' devices.txt
+devices=` awk '{print "FALSE " $0}' devices.txt `
 
-if [ "$?" = "0" ]
-	then echo "yes" > answer.txt
-	else echo "no" > answer.txt
+grub=$(zenity --list --title="$title" --text "Would you like to install the bootloader?\nThe answer to this is usually yes,\nunless you are dual-booting and plan to have another system handle\nthe boot process." --radiolist --column Select --column Choice FALSE "yes" FALSE "no")
+if [ "$grub" = "yes" ]
+	then grub_device=$(zenity --list --title="$title" --text "Where do you want to install the bootloader?" --radiolist --column Select --column Device $devices)
 fi
-btloader=` cat answer.txt `
 }
 
 # Installation
@@ -251,13 +261,27 @@ fi
 echo "# Sorting fastest pacman mirrors..."
 reflector --verbose -l 50 -p http --sort rate --save /etc/pacman.d/mirrorlist
 
+# updating pacman cache
+echo "# Updating Pacman Cache..."
+pacman -Syy
+arch_chroot "pacman -Syy"
+
 #installing base
 echo "# Installing Base..."
-pacstrap /mnt base base-devel grub
+if [ "$kernel" = "linux" ]
+	then pacstrap /mnt base base-devel
+elif [ "$kernel" = "linux-lts" ]
+	then pacstrap /mnt $(pacman -Sqg base | sed 's/^\(linux\)$/\1-lts/') base-devel
+elif [ "$kernel" = "linux-grsec" ]
+	then pacstrap /mnt $(pacman -Sqg base | sed 's/^\(linux\)$/\1-grsec/') base-devel
+elif [ "$kernel" = "linux-zen" ]
+	then pacstrap /mnt $(pacman -Sqg base | sed 's/^\(linux\)$/\1-zen/') base-devel
+
+fi
 
 #generating fstab
 echo "# Generating File System Table..."
-genfstab -U /mnt >> /mnt/etc/fstab
+genfstab -p /mnt >> /mnt/etc/fstab
 
 #root password
 echo "# Setting root password..."
@@ -287,6 +311,7 @@ echo -e "Section "\"InputClass"\"\nIdentifier "\"system-keyboard"\"\nMatchIsKeyb
 
 #setting timezone
 echo "# Setting Timezone..."
+arch_chroot "rm /etc/localtime"
 arch_chroot "ln -s /usr/share/zoneinfo/${zone}/${subzone} /etc/localtime"
 
 #setting hw clock
@@ -306,8 +331,20 @@ pacstrap /mnt mesa xf86-video-vesa xf86-video-voodoo xf86-video-dummy xf86-video
 
 # virtualbox
 if [ "$vbox" = "yes" ]
-	then pacstrap /mnt virtualbox-guest-modules-arch virtualbox-guest-utils
-        echo -e "vboxguest\nvboxsf\nvboxvideo" > /mnt/etc/modules-load.d/virtualbox.conf
+	then 
+	if [ "$kernel" = "linux" ]
+		then pacstrap /mnt virtualbox-guest-modules-arch virtualbox-guest-utils
+        	echo -e "vboxguest\nvboxsf\nvboxvideo" > /mnt/etc/modules-load.d/virtualbox.conf
+	elif [ "$kernel" = "linux-lts" ]
+		then pacstrap /mnt virtualbox-guest-dkms virtualbox-guest-utils linux-lts-headers
+		echo -e "vboxguest\nvboxsf\nvboxvideo" > /mnt/etc/modules-load.d/virtualbox.conf
+	elif [ "$kernel" = "linux-grsec" ]
+		then pacstrap /mnt virtualbox-guest-dkms virtualbox-guest-utils linux-grsec-headers
+		echo -e "vboxguest\nvboxsf\nvboxvideo" > /mnt/etc/modules-load.d/virtualbox.conf
+	elif [ "$kernel" = "linux-zen" ]
+		then pacstrap /mnt virtualbox-guest-dkms virtualbox-guest-utils linux-zen-headers
+		echo -e "vboxguest\nvboxsf\nvboxvideo" > /mnt/etc/modules-load.d/virtualbox.conf
+	fi
 fi
 
 # installing chosen desktop
@@ -349,14 +386,16 @@ fi
 
 # running mkinit
 echo "# Running mkinitcpio..."
-arch_chroot "mkinitcpio -p linux"
+arch_chroot "mkinitcpio -p $kernel"
 
 # installing bootloader
-if [ "$btloader" = "yes" ]
+if [ "$grub" = "yes" ]
 	then echo "# Installing Bootloader..."
-	arch_chroot "grub-install --target=i386-pc $dev"
+	pacstrap /mnt grub os-prober
+	arch_chroot "grub-install --target=i386-pc $grub_device"
 	arch_chroot "grub-mkconfig -o /boot/grub/grub.cfg"
 fi
+
 
 # installing chosen software
 echo "# Installing chosen software packages..."
@@ -393,7 +432,7 @@ fi
 
 
 # Setting variables
-title="Revenge Intaller Framework 0.06 $SYSTEM"
+title="Revenge Intaller Framework 0.10 $SYSTEM"
 
 # Adapted from AIS. An excellent bit of code!
 arch_chroot() {
@@ -411,6 +450,7 @@ partition
 configure
 root_password
 user_password
+kernel
 vbox
 archuserrepo
 cups
