@@ -257,7 +257,7 @@ pacstrap /mnt base base-devel grub
 
 #generating fstab
 echo "# Generating File System Table..."
-genfstab -U /mnt >> /mnt/etc/fstab
+genfstab -L /mnt >> /mnt/etc/fstab
 
 #root password
 echo "# Setting root password..."
