@@ -367,8 +367,8 @@ if [ "$desktop" = "gnome" ]
 	elif [ "$desktop" = "plasma kde-applications" ]
 	then pacstrap /mnt sddm;arch_chroot "systemctl enable sddm.service"
 	else
-	pacstrap /mnt lightdm lightdm-gtk-greeter
-	arch_chroot "systemctl enable lightdm.service"
+	pacstrap /mnt lxdm
+	arch_chroot "systemctl enable lxdm.service"
 fi
 
 # enabling network manager
