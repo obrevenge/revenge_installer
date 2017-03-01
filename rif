@@ -38,7 +38,7 @@ fi
 	--radiolist --multiple --column ' ' --column 'Partitions')
 	#mounting root partition
 	mount $root_part /mnt
-	
+
 	# Swap partition?
 	zenity --question --title="$title" --text "Do you want to use a swap partition?" --height=40
 		if [ "$?" = "0" ]
@@ -48,7 +48,7 @@ fi
 		mkswap $swap_part
 		swapon $swap_part
 		fi
-	
+
 	# Boot Partition?
 	zenity --question --title="$title" --text "Do you want to use a seperate boot partition?" --height=40
 		if [ "$?" = "0" ]
@@ -58,9 +58,9 @@ fi
 
 		mkdir -p /mnt/boot
 		mount $boot_part /mnt/boot
-	
+
 		fi
-	
+
 	# Home Partition?
 	zenity --question --title="$title" --text "Do you want to use a seperate home partition?" --height=40
 		if [ "$?" = "0" ]
@@ -95,24 +95,46 @@ auto_partition() {
 	ram=$(grep MemTotal /proc/meminfo | awk '{print $2/1024}' | sed 's/\..*//')
 	# Find where swap partition stops
 	num=4000
-	
+
 	if [ "$ram" -gt "$num" ]
 		then swap_space=4096
 		else swap_space=$ram
 	fi
 	
-	(echo "# Creating Partitions..."
-	dd if=/dev/zero of=$dev bs=512 count=1
-	Parted "mklabel msdos"
-	Parted "mkpart primary linux-swap 1MiB ${swap_space}MiB"
-	Parted "mkpart primary ext4 ${swap_space}MiB 100%"
-	Parted "set 2 boot on"
-	mkswap ${dev}1
-	swapon ${dev}1
-	mkfs.ext4 -F ${dev}2
-	mount ${dev}2 /mnt) | zenity --progress --title="$title" --width=450 --pulsate --auto-close --no-cancel
-	
-}	
+	uefi_swap=$(($swap_space + 513))
+
+
+	#BIOS or UEFI
+    if [ "$SYSTEM" = "BIOS" ]
+        then
+	       (echo "# Creating Partitions for BIOS..."
+	        dd if=/dev/zero of=$dev bs=512 count=1
+	        Parted "mklabel msdos"
+	        Parted "mkpart primary linux-swap 1MiB ${swap_space}MiB"
+	        Parted "mkpart primary ext4 ${swap_space}MiB 100%"
+	        Parted "set 2 boot on"
+	        mkswap ${dev}1
+	        swapon ${dev}1
+	        mkfs.ext4 -F ${dev}2
+	        mount ${dev}2 /mnt) | zenity --progress --title="$title" --width=450 --pulsate --auto-close --no-cancel
+	    else
+            	(echo "# Creating Partitions for UEFI..."
+            	dd if=/dev/zero of=$dev bs=512 count=1
+            	Parted "mklabel gpt"
+            	Parted "mkpart primary fat32 1MiB 513MiB"
+		Parted "mkpart primary linux-swap 513MiB ${uefi_swap}MiB"
+		Parted "mkpart primary ext4 ${uefi_swap}MiB 100%"
+		Parted "set 1 boot on"
+		mkfs.fat -F32 ${dev}1
+		mkfs.ext4 -F ${dev}3
+		mkswap ${dev}2
+		swapon ${dev}2
+		mount ${dev}3 /mnt
+		mkdir -p /mnt/boot
+		mount ${dev}1 /mnt/boot) | zenity --progress --title="$title" --width=450 --pulsate --auto-close --no-cancel
+	fi
+			
+}
 
 partition() {
 	ans=$(zenity --list --title="$title" --radiolist --text "Would you like to use automatic partitioning or would you like to partition the disk for installation yourself?\nAutomatic Partitioning will completely erase the disk that you select and install Arch." --column Select --column Choice FALSE "Automatic Partitioning" FALSE "Manual Partitioning")
@@ -132,7 +154,7 @@ locales=$(cat /etc/locale.gen | grep -v "#  " | sed 's/#//g' | sed 's/ UTF-8//g'
 locale=$(zenity --list --title="$title" --radiolist --text "Select your locale/language.\nThe default is American English 'en_US.UTF-8'." --column Select --column Locale TRUE en_US.UTF-8 $locales --height=350 --width=300)
 
 # Getting Keyboard Config
-keymaps=("TRUE us FALSE af FALSE al FALSE am FALSE at FALSE az FALSE ba FALSE bd FALSE be FALSE bg FALSE br FALSE bt FALSE bw FALSE by FALSE ca FALSE cd FALSE ch FALSE cm FALSE cn FALSE cz FALSE de FALSE dk FALSE ee FALSE es FALSE et FALSE eu FALSE fi FALSE fo FALSE fr FALSE gb FALSE ge FALSE gh FALSE gn FALSE gr FALSE hr FALSE hu FALSE ie FALSE il FALSE in FALSE iq FALSE ir FALSE is FALSE it FALSE jp FALSE ke FALSE kg FALSE kh FALSE kr FALSE kz FALSE la FALSE lk FALSE lt FALSE lv FALSE ma FALSE md FALSE me FALSE mk FALSE ml FALSE mm FALSE mn FALSE mt FALSE mv FALSE ng FALSE nl FALSE no FALSE np FALSE pc FALSE ph FALSE pk FALSE pl FALSE pt FALSE ro FALSE rs FALSE ru FALSE se FALSE si FALSE sk FALSE sn FALSE sy FALSE tg FALSE th FALSE tj FALSE tm FALSE tr FALSE tw FALSE tz FALSE ua FALSE uz FALSE vn FALSE za") 
+keymaps=("TRUE us FALSE af FALSE al FALSE am FALSE at FALSE az FALSE ba FALSE bd FALSE be FALSE bg FALSE br FALSE bt FALSE bw FALSE by FALSE ca FALSE cd FALSE ch FALSE cm FALSE cn FALSE cz FALSE de FALSE dk FALSE ee FALSE es FALSE et FALSE eu FALSE fi FALSE fo FALSE fr FALSE gb FALSE ge FALSE gh FALSE gn FALSE gr FALSE hr FALSE hu FALSE ie FALSE il FALSE in FALSE iq FALSE ir FALSE is FALSE it FALSE jp FALSE ke FALSE kg FALSE kh FALSE kr FALSE kz FALSE la FALSE lk FALSE lt FALSE lv FALSE ma FALSE md FALSE me FALSE mk FALSE ml FALSE mm FALSE mn FALSE mt FALSE mv FALSE ng FALSE nl FALSE no FALSE np FALSE pc FALSE ph FALSE pk FALSE pl FALSE pt FALSE ro FALSE rs FALSE ru FALSE se FALSE si FALSE sk FALSE sn FALSE sy FALSE tg FALSE th FALSE tj FALSE tm FALSE tr FALSE tw FALSE tz FALSE ua FALSE uz FALSE vn FALSE za")
 
 keymap=$(zenity --list --title="$title" --radiolist --text "Select your keyboard layout for the installed system.\nThe default is American 'us'." --column Select --column Locale $keymaps --height=350 --width=300)
 
@@ -158,6 +180,18 @@ vbox() {
 graphics=$(lspci | grep -i "vga" | sed 's/.*://' | sed 's/(.*//' | sed 's/^[ \t]*//')
 if [[ $(echo $graphics | grep -i 'virtualbox') != "" ]]
 	then vbox=$(zenity --list --title="$title" --radiolist --text "The Revenge Installer has detected that you are currently running in Virtualbox.\nWould you like to install Virtualbox Utilities to the installed system?" --column Select --column Choice TRUE yes FALSE no)
+fi
+}
+
+nvidia() {
+graphics=$(lspci | grep -i "vga" | sed 's/.*://' | sed 's/(.*//' | sed 's/^[ \t]*//')
+card=$(lspci -k | grep -A 2 -E "(VGA|3D)")
+if [[ $(echo $graphics | grep -i 'nvidia') != "" ]]
+	then nvidia=$(zenity --list --title="$title" --radiolist --text "The Revenge Installer has detected that you are currently running an Nvidia graphics card.\nWould you like to install Proprietary Nvidia graphics drivers to the installed system?" --column Select --column Choice FALSE yes FALSE no)
+		if [ "nvidia" = "yes" ]
+			then video=$(zenity --list --height=400 --title="$title" --text "You will need to know what model of NVIDIA gaphics card you are using.\nFor NVIDIA 400 series and newer install nvidia and nvidia-libgl.\nFor 8000-9000 or 100-300 series install nvidia-304xx and nvidia-304xx-libgl.\n\nYour current graphics card is:\n$card\n\nSelect the NVIDIA drivers that you would like to install." --checklist --column "Select" --column "Driver" FALSE "nvidia nvidia-libgl nvidia-settings" FALSE "nvidia-304xx nvidia-304xx-libgl nvidia-settings")
+			else video="mesa xf86-video-nouveau"
+		fi
 fi
 }
 
@@ -197,7 +231,7 @@ desktop() {
 desktop=$(zenity --list --height=550 --width=450 --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE "gnome" FALSE "gnome gnome-extra" FALSE "plasma" FALSE "plasma kde-applications" FALSE "xfce4" FALSE "xfce4 xfce4-goodies" FALSE "lxde" FALSE "mate" FALSE "mate mate-extra" FALSE "mate-gtk3" FALSE "mate-gtk3 mate-extra-gtk3" FALSE "budgie-desktop" FALSE "cinnamon" FALSE "deepin" FALSE "enlightenment" FALSE "i3-wm i3lock i3status" FALSE "openbox tint2 openbox-themes")
 }
 
-# internet app list 
+# internet app list
 internet_apps() {
 zenity --list --title="$title" --text "Select the Internet Applications that You Would Like to Install" --checklist --column "Select" --column "Applications" FALSE "firefox " FALSE "chromium " FALSE "midori " FALSE "qupzilla " FALSE "netsurf " FALSE "filezilla " FALSE "opera " FALSE "evolution " FALSE "geary " FALSE "thunderbird " FALSE "transmission-gtk " FALSE "qbittorrent " FALSE "hexchat " --height 400 > int2.txt
 sed -i -e 's/[|]//g' int2.txt
@@ -301,13 +335,12 @@ rm .passwd
 #setting locale
 echo "# Generating Locale..."
 echo "LANG=\"${locale}\"" > /mnt/etc/locale.conf
-echo "${locale} UTF-8" > /mnt/etc/locale.gen 
+echo "${locale} UTF-8" > /mnt/etc/locale.gen
 arch_chroot "locale-gen"
 export LANG=${locale}
 
 #setting keymap
-mkdir -p /mnt/etc/X11/xorg.conf.d/
-echo -e "Section "\"InputClass"\"\nIdentifier "\"system-keyboard"\"\nMatchIsKeyboard "\"on"\"\nOption "\"XkbLayout"\" "\"${keymap}"\"\nEndSection" > /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
+arch_chroot "localectl set-keymap $keymap"
 
 #setting timezone
 echo "# Setting Timezone..."
@@ -327,11 +360,11 @@ echo "%wheel ALL=(ALL) ALL" >> /mnt/etc/sudoers
 
 # installing video and audio packages
 echo "# Installing Desktop, Sound, and Video Drivers..."
-pacstrap /mnt mesa xf86-video-vesa xf86-video-voodoo xf86-video-dummy xf86-video-vmware xf86-video-ati xf86-video-fbdev xf86-video-intel xf86-video-nouveau xf86-video-openchrome xf86-video-sisusb xf86-video-amdgpu xorg-server xorg-server-utils xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse xf86-input-libinput intel-ucode b43-fwcutter networkmanager nm-connection-editor network-manager-applet polkit-gnome gksu ttf-dejavu gnome-keyring xdg-user-dirs gvfs
+pacstrap /mnt  $video xf86-video-vesa xf86-video-voodoo xf86-video-dummy xf86-video-vmware xf86-video-ati xf86-video-fbdev xf86-video-intel xf86-video-openchrome xf86-video-sisusb xf86-video-amdgpu xorg-server xorg-server-utils xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse xf86-input-libinput intel-ucode b43-fwcutter networkmanager nm-connection-editor network-manager-applet polkit-gnome gksu ttf-dejavu gnome-keyring xdg-user-dirs gvfs
 
 # virtualbox
 if [ "$vbox" = "yes" ]
-	then 
+	then
 	if [ "$kernel" = "linux" ]
 		then pacstrap /mnt virtualbox-guest-modules-arch virtualbox-guest-utils
         	echo -e "vboxguest\nvboxsf\nvboxvideo" > /mnt/etc/modules-load.d/virtualbox.conf
@@ -384,17 +417,36 @@ if [ "$aur" = "yes" ]
 
 fi
 
+# installing bootloader
+if [ "$grub" = "yes" ]
+	then if [ "$SYSTEM" = 'BIOS' ]
+		then echo "# Installing Bootloader..."
+		pacstrap /mnt grub os-prober
+		arch_chroot "grub-install --target=i386-pc $grub_device"
+		arch_chroot "grub-mkconfig -o /boot/grub/grub.cfg"
+	else
+		echo "# Installing Bootloader..."
+
+
+		if [ "$ans" = "Automatic Partitioning" ]
+			then root_part=${dev}3
+		fi
+
+		[[ $(echo $root_part | grep "/dev/mapper/") != "" ]] && bl_root=$root_part \
+		|| bl_root=$"PARTUUID="$(blkid -s PARTUUID ${root_part} | sed 's/.*=//g' | sed 's/"//g')
+
+		bootctl --path=/boot install
+		echo -e "default  Arch\ntimeout  10" > /mnt/boot/loader/loader.conf
+		[[ -e /mnt/boot/initramfs-linux.img ]] && echo -e "title\tArch Linux\nlinux\t/vmlinuz-linux\ninitrd\t/initramfs-linux.img\noptions\troot=${bl_root} rw" > /mnt/boot/loader/entries/Arch.conf
+		[[ -e /mnt/boot/initramfs-linux-lts.img ]] && echo -e "title\tArchLinux LTS\nlinux\t/vmlinuz-linux-lts\ninitrd\t/initramfs-linux-lts.img\noptions\troot=${bl_root} rw" > /mnt/boot/loader/entries/Arch-lts.conf
+		[[ -e /mnt/boot/initramfs-linux-grsec.img ]] && echo -e "title\tArch Linux Grsec\nlinux\t/vmlinuz-linux-grsec\ninitrd\t/initramfs-linux-grsec.img\noptions\troot=${bl_root} rw" > /mnt/boot/loader/entries/Arch-grsec.conf
+		[[ -e /mnt/boot/initramfs-linux-zen.img ]] && echo -e "title\tArch Linux Zen\nlinux\t/vmlinuz-linux-zen\ninitrd\t/initramfs-linux-zen.img\noptions\troot=${bl_root} rw" > /mnt/boot/loader/entries/Arch-zen.conf
+		fi
+fi
+
 # running mkinit
 echo "# Running mkinitcpio..."
 arch_chroot "mkinitcpio -p $kernel"
-
-# installing bootloader
-if [ "$grub" = "yes" ]
-	then echo "# Installing Bootloader..."
-	pacstrap /mnt grub os-prober
-	arch_chroot "grub-install --target=i386-pc $grub_device"
-	arch_chroot "grub-mkconfig -o /boot/grub/grub.cfg"
-fi
 
 
 # installing chosen software
@@ -421,23 +473,19 @@ echo "# Installation Finished!"
 # execution
 # System Detection
 if [[ -d "/sys/firmware/efi/" ]]; then
-      # Mount efivarfs if it is not already mounted
-      if [[ -z $(mount | grep /sys/firmware/efi/efivars) ]]; then
-        mount -t efivarfs efivarfs /sys/firmware/efi/efivars
-      fi
-      SYSTEM="UEFI";zenity --error --title="$title" --text "I'm sorry, the Revenge Installer does not\ncurrently support UEFI. Development continues, so check back soon.";exit
-    else
+      SYSTEM="UEFI"
+      else
       SYSTEM="BIOS"
 fi
 
 
 # Setting variables
-title="Revenge Intaller Framework 0.10 $SYSTEM"
+title="Revenge Intaller Framework 0.80 $SYSTEM"
 
 # Adapted from AIS. An excellent bit of code!
 arch_chroot() {
     arch-chroot /mnt /bin/bash -c "${1}"
-}  
+}
 
 # Adapted from Feliz Installer
 Parted() {
@@ -456,12 +504,10 @@ root_password
 user_password
 kernel
 vbox
+nvidia
 archuserrepo
 cups
 desktop
 installapps
 bootloader
 installing
-
-
-
