@@ -27,7 +27,7 @@ dev=$(zenity --list --title="$title" --radiolist --text "Select the drive that y
 
 # Partitioning
 # Allow user to partition using gparted
-zenity --question --title="$title" --height=40 --text "Do you need to partition $dev?\nSelect 'yes' to open gparted and partition\nthe disk or format partitions if needed.\nThe installer will not format the partitions after this,\nso if your partitions need to be formatted please select yes\nand use gparted to format them now.\nThe installer supports using a seperate /boot /home /root partitions, as well as a swap partition or file."
+zenity --question --title="$title" --height=40 --text "Do you need to partition $dev?\nSelect 'yes' to open gparted and partition\nthe disk or format partitions if needed.\nThe installer will not format the partitions after this,\nso if your partitions need to be formatted please select yes\nand use gparted to format them now.\nThe installer supports using a seperate /boot /home and /root partition, as well as a swap partition or file."
 if [ "$?" = "0" ]
 	then gparted
 fi
