@@ -27,7 +27,7 @@ dev=$(zenity --list --title="$title" --radiolist --text "Select the drive that y
 
 # Partitioning
 # Allow user to partition using gparted
-zenity --question --title="$title" --height=40 --text "Do you need to partition $dev?\nSelect 'yes' to open gparted and partition\nthe disk or format partitions if needed.\nThe installer will not format the partitions after this,\nso if your partitions need to be formatted please select yes\nand use gparted to format them now.\nThe installer supports using a seperate /boot /home /root and swap partitions."
+zenity --question --title="$title" --height=40 --text "Do you need to partition $dev?\nSelect 'yes' to open gparted and partition\nthe disk or format partitions if needed.\nThe installer will not format the partitions after this,\nso if your partitions need to be formatted please select yes\nand use gparted to format them now.\nThe installer supports using a seperate /boot /home and /root partition, as well as a swap partition or file."
 if [ "$?" = "0" ]
 	then gparted
 fi
@@ -47,6 +47,15 @@ fi
 	--radiolist --multiple --column ' ' --column 'Partitions')
 		mkswap $swap_part
 		swapon $swap_part
+		fi
+	zenity --question --title="$title" --text "Would you like to create a 1GB swapfile on root? (If you've already mounted a swap partition or don't want swap, select \"No\".)" --height=40
+		if [ "$?" = "0" ]
+	 	then swapfile="yes"
+		touch /mnt/swapfile
+		dd if=/dev/zero of=/mnt/swapfile bs=1M count=1024
+		chmod 600 /mnt/swapfile
+		mkswap /mnt/swapfile
+		swapon /mnt/swapfile
 		fi
 
 	# Boot Partition?
@@ -69,7 +78,7 @@ fi
 		--radiolist --multiple --column ' ' --column 'Partitions')
 		# mounting home partition
 		mkdir -p /mnt/home
-		mount $root_part /mnt/home
+		mount $home_part /mnt/home
 		fi
 }
 
@@ -316,6 +325,9 @@ fi
 #generating fstab
 echo "# Generating File System Table..."
 genfstab -p /mnt >> /mnt/etc/fstab
+if ["$swapfile" = "yes"]
+then echo "/swapfile none swap sw 0 0" >> /mnt/etc/fstab
+fi
 
 #root password
 echo "# Setting root password..."
