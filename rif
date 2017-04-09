@@ -48,7 +48,7 @@ fi
 		mkswap $swap_part
 		swapon $swap_part
 		fi
-	zenity --question --title="$title" --text "Would you like to create a 1GB swapfile on root? (If you've already mounted a swap partition or don't want swap, select \"No\".)" --height=40
+	zenity --question --title="$title" --text "Would you like to create a 1GB swapfile on root?\nIf you've already mounted a swap partition or don't want swap, select \"No\".\nThis process could take some time, so please be patient." --height=40
 		if [ "$?" = "0" ]
 	 	then swapfile="yes"
 		touch /mnt/swapfile
@@ -237,7 +237,7 @@ print=$(zenity --list --title="$title" --radiolist --text "Would you like to ins
 
 desktop() {
 # Choosing Desktop
-desktop=$(zenity --list --height=550 --width=450 --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE "gnome" FALSE "gnome gnome-extra" FALSE "plasma" FALSE "plasma kde-applications" FALSE "xfce4" FALSE "xfce4 xfce4-goodies" FALSE "lxde" FALSE "mate" FALSE "mate mate-extra" FALSE "budgie-desktop" FALSE "cinnamon" FALSE "deepin" FALSE "enlightenment" FALSE "i3-wm i3lock i3status" FALSE "openbox tint2 openbox-themes")
+desktop=$(zenity --list --height=550 --width=450 --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE "gnome" FALSE "gnome gnome-extra" FALSE "plasma" FALSE "plasma kde-applications" FALSE "xfce4" FALSE "xfce4 xfce4-goodies" FALSE "lxde" FALSE "lxqt" FALSE "mate" FALSE "mate mate-extra" FALSE "budgie-desktop" FALSE "cinnamon" FALSE "deepin" FALSE "enlightenment" FALSE "jwm" FALSE "i3-wm i3lock i3status" FALSE "openbox tint2 openbox-themes")
 }
 
 # internet app list
@@ -260,7 +260,7 @@ sed -i -e 's/[|]//g' off2.txt
 
 # utility app list
 utility_apps() {
-zenity --list --title="$title" --text "Select the Utility Applications that You Would Like to Install" --checklist --column "Select" --column "Applications" FALSE "htop " FALSE "terminator " FALSE "gnome-disk-utility " FALSE "gparted " FALSE "synapse " FALSE "virtualbox " FALSE "gufw " FALSE "leafpad " FALSE "geany " FALSE "parcellite " FALSE "grsync " FALSE "guake " FALSE "ntfs-3g " FALSE "gptfdisk " --height 400 > utils.txt
+zenity --list --title="$title" --text "Select the Utility Applications that You Would Like to Install" --checklist --column "Select" --column "Applications" FALSE "htop " FALSE "terminator " FALSE "gnome-disk-utility " FALSE "gparted " FALSE "synapse " FALSE "virtualbox " FALSE "gufw " FALSE "redshift " FALSE "leafpad " FALSE "geany " FALSE "parcellite " FALSE "grsync " FALSE "guake " FALSE "ntfs-3g " FALSE "gptfdisk " --height 400 > utils.txt
 sed -i -e 's/[|]//g' utils.txt
 }
 
@@ -325,8 +325,9 @@ fi
 #generating fstab
 echo "# Generating File System Table..."
 genfstab -p /mnt >> /mnt/etc/fstab
-if ["$swapfile" = "yes"]
-then echo "/swapfile none swap sw 0 0" >> /mnt/etc/fstab
+if grep -q "/mnt/swapfile" "/mnt/etc/fstab"; then
+swapoff -a
+mv /mnt/swapfile /mnt/mnt/
 fi
 
 #root password
@@ -405,6 +406,8 @@ if [ "$desktop" = "gnome" ]
 	then arch_chroot "systemctl enable gdm.service"
 	elif [ "$desktop" = "gnome gnome-extra" ]
 	then arch_chroot "systemctl enable gdm.service"
+	elif [ "$desktop" = "budgie-desktop" ]
+	then pacstrap /mnt lightdm lightdm-gtk-greeter-settings lightdm-gtk-greeter gnome-control-center gnome-backgrounds;arch_chroot "systemctl enable lightdm.service"
 	elif [ "$desktop" = "lxde" ]
 	then arch_chroot "systemctl enable lxdm.service"
 	elif [ "$desktop" = "plasma" ]
