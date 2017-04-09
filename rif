@@ -51,11 +51,12 @@ fi
 	zenity --question --title="$title" --text "Would you like to create a 1GB swapfile on root?\nIf you've already mounted a swap partition or don't want swap, select \"No\".\nThis process could take some time, so please be patient." --height=40
 		if [ "$?" = "0" ]
 	 	then swapfile="yes"
+		(echo "# Creating swapfile..."
 		touch /mnt/swapfile
 		dd if=/dev/zero of=/mnt/swapfile bs=1M count=1024
 		chmod 600 /mnt/swapfile
 		mkswap /mnt/swapfile
-		swapon /mnt/swapfile
+		swapon /mnt/swapfile) | zenity --progress --title="$title" --width=450 --pulsate --auto-close --no-cancel
 		fi
 
 	# Boot Partition?
@@ -119,28 +120,34 @@ auto_partition() {
 	       (echo "# Creating Partitions for BIOS..."
 	        dd if=/dev/zero of=$dev bs=512 count=1
 	        Parted "mklabel msdos"
-	        Parted "mkpart primary linux-swap 1MiB ${swap_space}MiB"
-	        Parted "mkpart primary ext4 ${swap_space}MiB 100%"
-	        Parted "set 2 boot on"
-	        mkswap ${dev}1
-	        swapon ${dev}1
-	        mkfs.ext4 -F ${dev}2
-	        mount ${dev}2 /mnt) | zenity --progress --title="$title" --width=450 --pulsate --auto-close --no-cancel
+	        Parted "mkpart primary ext4 1MiB 100%"
+	        Parted "set 1 boot on"
+	        mkfs.ext4 -F ${dev}1
+	        mount ${dev}1 /mnt
+		touch /mnt/swapfile
+		dd if=/dev/zero of=/mnt/swapfile bs=1M count=${swap_space}
+		chmod 600 /mnt/swapfile
+		mkswap /mnt/swapfile
+		swapon /mnt/swapfile
+		swapfile="yes") | zenity --progress --title="$title" --width=450 --pulsate --auto-close --no-cancel
 	    else
             	(echo "# Creating Partitions for UEFI..."
             	dd if=/dev/zero of=$dev bs=512 count=1
             	Parted "mklabel gpt"
             	Parted "mkpart primary fat32 1MiB 513MiB"
-		Parted "mkpart primary linux-swap 513MiB ${uefi_swap}MiB"
-		Parted "mkpart primary ext4 ${uefi_swap}MiB 100%"
+		Parted "mkpart primary ext4 513MiB 100%"
 		Parted "set 1 boot on"
 		mkfs.fat -F32 ${dev}1
-		mkfs.ext4 -F ${dev}3
-		mkswap ${dev}2
-		swapon ${dev}2
-		mount ${dev}3 /mnt
+		mkfs.ext4 -F ${dev}2
+		mount ${dev}2 /mnt
 		mkdir -p /mnt/boot
-		mount ${dev}1 /mnt/boot) | zenity --progress --title="$title" --width=450 --pulsate --auto-close --no-cancel
+		mount ${dev}1 /mnt/boot
+		touch /mnt/swapfile
+		dd if=/dev/zero of=/mnt/swapfile bs=1M count=${swap_space}
+		chmod 600 /mnt/swapfile
+		mkswap /mnt/swapfile
+		swapon /mnt/swapfile
+		swapfile="yes") | zenity --progress --title="$title" --width=450 --pulsate --auto-close --no-cancel
 	fi
 			
 }
