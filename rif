@@ -333,8 +333,8 @@ fi
 echo "# Generating File System Table..."
 genfstab -p /mnt >> /mnt/etc/fstab
 if grep -q "/mnt/swapfile" "/mnt/etc/fstab"; then
-swapoff -a
-mv /mnt/swapfile /mnt/mnt/
+sed -i '/swapfile/d' /mnt/etc/fstab
+echo "/swapfile		none	swap	defaults	0	0" >> /mnt/etc/fstab
 fi
 
 #root password
