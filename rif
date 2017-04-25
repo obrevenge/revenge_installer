@@ -443,7 +443,7 @@ fi
 if [ "$grub" = "yes" ]
 	then if [ "$SYSTEM" = 'BIOS' ]
 		then echo "# Installing Bootloader..."
-		pacstrap /mnt grub os-prober
+		pacstrap /mnt grub
 		arch_chroot "grub-install --target=i386-pc $grub_device"
 		arch_chroot "grub-mkconfig -o /boot/grub/grub.cfg"
 	else
