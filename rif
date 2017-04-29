@@ -202,12 +202,13 @@ fi
 nvidia() {
 graphics=$(lspci | grep -i "vga" | sed 's/.*://' | sed 's/(.*//' | sed 's/^[ \t]*//')
 card=$(lspci -k | grep -A 2 -E "(VGA|3D)")
-if [[ $(echo $graphics | grep -i 'nvidia') != "" ]]
+if [[ $(echo $card | grep -i 'nvidia') != "" ]]
 	then nvidia=$(zenity --list --title="$title" --radiolist --text "The Revenge Installer has detected that you are currently running an Nvidia graphics card.\nWould you like to install Proprietary Nvidia graphics drivers to the installed system?" --column Select --column Choice FALSE yes FALSE no)
 		if [ "nvidia" = "yes" ]
 			then video=$(zenity --list --height=400 --title="$title" --text "You will need to know what model of NVIDIA gaphics card you are using.\nFor NVIDIA 400 series and newer install nvidia and nvidia-libgl.\nFor 8000-9000 or 100-300 series install nvidia-304xx and nvidia-304xx-libgl.\n\nYour current graphics card is:\n$card\n\nSelect the NVIDIA drivers that you would like to install." --checklist --column "Select" --column "Driver" FALSE "nvidia nvidia-libgl nvidia-settings" FALSE "nvidia-304xx nvidia-304xx-libgl nvidia-settings")
 			else video="mesa xf86-video-nouveau"
 		fi
+	else video="mesa xf86-video-nouveau"
 fi
 }
 
