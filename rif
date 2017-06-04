@@ -101,6 +101,7 @@ touch root_part.txt
 if [ "$SYSTEM" = "BIOS" ]
 then echo {$dev}1 >> root_part.txt
 else echo {$dev}2 >> root_part.txt
+fi
 	if [ "$yn" = "no" ]
 	then partition
 	fi
