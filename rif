@@ -97,8 +97,10 @@ auto_partition() {
 	dev=$(zenity --list --title="$title" --radiolist --text "Select the drive that you want to use for installation." --column Drive --column Info $devices)
 
 	yn=$(zenity --list --title="$title" --text "Warning! This will erase all data on $dev\!\nAre you sure you want to continue?\nSelect 'Yes' to continue and 'No' to go back." --radiolist --column Select --column Option TRUE yes FALSE no)
-        touch root_part.txt
-        echo {$dev}3 >> root_part.txt
+touch root_part.txt
+if [ "$SYSTEM" = "BIOS" ]
+then echo {$dev}1 >> root_part.txt
+else echo {$dev}2 >> root_part.txt
 	if [ "$yn" = "no" ]
 	then partition
 	fi
