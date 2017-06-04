@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Revenge Installer Framework version 0.04
 #
@@ -37,6 +37,8 @@ fi
 	xargs -0 zenity --list --title="$title" --text="Choose a partition to use for the root partition\nWarning, this list shows all available partitions on all available drives.\nPlease choose with care." \
 	--radiolist --multiple --column ' ' --column 'Partitions')
 	#mounting root partition
+touch root_part.txt    
+echo $root_part >> root_part.txt
 	mount $root_part /mnt
 
 	# Swap partition?
@@ -95,7 +97,11 @@ auto_partition() {
 	dev=$(zenity --list --title="$title" --radiolist --text "Select the drive that you want to use for installation." --column Drive --column Info $devices)
 
 	yn=$(zenity --list --title="$title" --text "Warning! This will erase all data on $dev\!\nAre you sure you want to continue?\nSelect 'Yes' to continue and 'No' to go back." --radiolist --column Select --column Option TRUE yes FALSE no)
-
+        touch root_part.txt
+        if [ "$SYSTEM" = "BIOS" ]
+	then echo {$dev}1 >> root_part.txt
+	else echo {$dev}2 >> root_part.txt
+        fi 
 	if [ "$yn" = "no" ]
 	then partition
 
@@ -216,10 +222,6 @@ kernel() {
 kernel=$(zenity --list --title="$title" --height=550 --text "There are several kernels available for the system.\n\nThe most common is the current linux kernel.\nThis kernel is the most up to date, providing the best hardware support.\nHowever, there could be possible bugs in this kernel, despite testing.\n\nThe linux-lts kernel provides a focus on stability.\nIt is based on an older kernel, so it may lack some newer features.\n\nThe linux-grsec kernel is focused on security\nIt contains the Grsecurity Patchset and PaX for increased security.\n\nThe linux-zen kernel is the result of a collaboration of kernel hackers\nto provide the best possible kernel for everyday systems.\n\nPlease select the kernel that you would like to install." --radiolist --column "Select" --column "Kernel" FALSE linux FALSE linux-lts FALSE linux-grsec FALSE linux-zen)
 }
 
-archuserrepo() {
-aur=$(zenity --list --title="$title" --radiolist --text "Would you like to install support for the Arch User Repository 'yaourt'?" --column Select --column Choice TRUE yes FALSE no)
-}
-
 root_password() {
 rtpasswd=$(zenity --entry --title="$title" --text "Please enter a root password." --hide-text)
 rtpasswd2=$(zenity --entry --title="$title" --text "Please re-enter your root password." --hide-text)
@@ -229,6 +231,9 @@ rtpasswd2=$(zenity --entry --title="$title" --text "Please re-enter your root pa
 	fi
 }
 
+changeshell() {
+shell=$(zenity --list --title="$title" --radiolist --text "What shell would you like to use?" --column Select --column Choice FALSE bash FALSE zsh FALSE fish)
+}
 
 user_password() {
 userpasswd=$(zenity --entry --title="$title" --text "Please enter a password for $username." --hide-text)
@@ -246,6 +251,22 @@ print=$(zenity --list --title="$title" --radiolist --text "Would you like to ins
 desktop() {
 # Choosing Desktop
 desktop=$(zenity --list --height=550 --width=450 --title="$title" --radiolist --text "What desktop would you like to install?" --column Select --column Desktop FALSE "gnome" FALSE "gnome gnome-extra" FALSE "plasma" FALSE "plasma kde-applications" FALSE "xfce4" FALSE "xfce4 xfce4-goodies" FALSE "lxde" FALSE "lxqt" FALSE "mate" FALSE "mate mate-extra" FALSE "budgie-desktop" FALSE "cinnamon" FALSE "deepin" FALSE "enlightenment" FALSE "jwm" FALSE "i3-wm i3lock i3status" FALSE "openbox tint2 openbox-themes")
+}
+
+displaymanager() {
+dm=$(zenity --list --title="$title" --radiolist --text "What display manager would you like to use?" --column "Select" --column "Displau Manager" FALSE "lightdm" FALSE "lxdm" FALSE "sddm" FALSE "gdm" FALSE "default")
+}
+
+revengerepo() {
+repo=$(zenity --list --title="$title" --radiolist --text "Would you like to add the revenge_repo to your /etc/pacman.conf? The revenge_repo contains a few extra packages, such as spotify and pamac." --column "Select" --column "Choice" TRUE yes FALSE no)
+}
+
+pamacaur() {
+pamac=$(zenity --list --title="$title" --radiolist --text "Would you like to install pamac, a GUI tool to install packages from the repo and the aur?" --column "Select" --column "Choice" TRUE yes FALSE no)
+}
+
+archuserrepo() {
+aur=$(zenity --list --title="$title" --radiolist --text "Would you like to install support for the Arch User Repository 'pacaur'?" --column "Select" --column "Choice" TRUE yes FALSE no)
 }
 
 # internet app list
@@ -268,7 +289,7 @@ sed -i -e 's/[|]//g' off2.txt
 
 # utility app list
 utility_apps() {
-zenity --list --title="$title" --text "Select the Utility Applications that You Would Like to Install" --checklist --column "Select" --column "Applications" FALSE "htop " FALSE "terminator " FALSE "gnome-disk-utility " FALSE "gparted " FALSE "synapse " FALSE "virtualbox " FALSE "gufw " FALSE "redshift " FALSE "leafpad " FALSE "geany " FALSE "parcellite " FALSE "grsync " FALSE "guake " FALSE "ntfs-3g " FALSE "gptfdisk " --height 400 > utils.txt
+zenity --list --title="$title" --text "Select the Utility Applications that You Would Like to Install" --checklist --column "Select" --column "Applications" FALSE "htop " FALSE "terminator " FALSE "gnome-disk-utility " FALSE "gparted " FALSE "synapse " FALSE "virtualbox " FALSE "gufw " FALSE "redshift " FALSE "leafpad " FALSE "geany " FALSE "parcellite " FALSE "grsync " FALSE "guake " FALSE "ntfs-3g " FALSE "btrfs-progs " FALSE "gptfdisk " --height 400 > utils.txt
 sed -i -e 's/[|]//g' utils.txt
 }
 
@@ -410,7 +431,8 @@ if [ "$print" = "yes" ]
 fi
 
 # starting desktop manager
-if [ "$desktop" = "gnome" ]
+if [ "$dm"  = "default" ]
+then if [ "$desktop" = "gnome" ]
 	then arch_chroot "systemctl enable gdm.service"
 	elif [ "$desktop" = "gnome gnome-extra" ]
 	then arch_chroot "systemctl enable gdm.service"
@@ -422,22 +444,40 @@ if [ "$desktop" = "gnome" ]
 	then pacstrap /mnt sddm;arch_chroot "systemctl enable sddm.service"
 	elif [ "$desktop" = "plasma kde-applications" ]
 	then pacstrap /mnt sddm;arch_chroot "systemctl enable sddm.service"
-	else
-	pacstrap /mnt lightdm lightdm-gtk-greeter-settings lightdm-gtk-greeter
+	else pacstrap /mnt lightdm lightdm-gtk-greeter-settings lightdm-gtk-greeter
 	arch_chroot "systemctl enable lightdm.service"
+	fi
+elif [ "$dm" = "lightdm" ]
+then pacstrap /mnt lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings;arch_chroot "systemctl enable lightdm.service"
+else pacstrap /mnt $dm;arch_chroot "systemctl enable $dm.service"
 fi
 
 # enabling network manager
 arch_chroot "systemctl enable NetworkManager"
 
+# adding revenge_repo
+if [ "$repo" = "yes"  ]
+then echo "[revenge_repo]" >> /mnt/etc/pacman.conf;echo "SigLevel = Optional TrustAll" >> /mnt/etc/pacman.conf;echo "Server = https://raw.github.com/obrevenge/revenge_repo/master/x86_64" >> /mnt/etc/pacman.conf;echo "Server = https://downloads.sourceforge.net/project/revenge-repo/revenge_repo/x86_64" >> /mnt/etc/pacman.conf;echo "Server = ftp://ftp.heanet.ie/mirrors/sourceforge/r/re/revenge-repo/revenge_repo/x86_64" >> /mnt/etc/pacman.conf
+arch_chroot "sudo pacman -Syy"
+fi
+
+# installing pamac-aur
+if [ "$pamac" = "yes" ]
+then arch_chroot "pacman -Syy"
+arch_chroot "pacman -S --noconfirm pamac-aur"
+fi
+
 # AUR
 if [ "$aur" = "yes" ]
-	then echo "[archlinuxfr]" >> /mnt/etc/pacman.conf
-	echo "SigLevel = Never" >> /mnt/etc/pacman.conf
-	echo "Server = http://repo.archlinux.fr/\$arch" >> /mnt/etc/pacman.conf
-	arch_chroot "pacman -Syy"
-	arch_chroot "pacman -S --noconfirm yaourt"
+	then arch_chroot "pacman -Syy"
+	arch_chroot "pacman -S --noconfirm pacaur"
 
+fi
+
+#selecting shell
+if [ "$shell" = "zsh" ]
+then arch_chroot "sudo pacman -S --noconfirm zsh zsh-syntax-highlighting zsh-completions grml-zsh-config;chsh -s /usr/bin/zsh"
+else arch_chroot "sudo pacman -S --noconfirm $shell;chsh -s /usr/bin/$shell"
 fi
 
 # installing bootloader
@@ -488,9 +528,8 @@ arch_chroot "pacman -S --noconfirm $int $med $off $utils"
 # unmounting partitions
 umount -R /mnt
 
-echo "# Installation Finished!"
+echo "# Installation Finished!" 
 ) | zenity --progress --title="$title" --width=450 --pulsate --no-cancel
-
 }
 
 # execution
@@ -525,11 +564,15 @@ partition
 configure
 root_password
 user_password
+changeshell
 kernel
 vbox
 #nvidia
+revengerepo
+pamacaur
 archuserrepo
 cups
+displaymanager
 desktop
 installapps
 bootloader
