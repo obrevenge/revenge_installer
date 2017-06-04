@@ -99,10 +99,8 @@ auto_partition() {
 	yn=$(zenity --list --title="$title" --text "Warning! This will erase all data on $dev\!\nAre you sure you want to continue?\nSelect 'Yes' to continue and 'No' to go back." --radiolist --column Select --column Option TRUE yes FALSE no)
         touch root_part.txt
         echo {$dev}3 >> root_part.txt
-        fi 
 	if [ "$yn" = "no" ]
 	then partition
-
 	fi
 
 	# Find total amount of RAM
