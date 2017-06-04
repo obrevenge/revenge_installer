@@ -98,9 +98,7 @@ auto_partition() {
 
 	yn=$(zenity --list --title="$title" --text "Warning! This will erase all data on $dev\!\nAre you sure you want to continue?\nSelect 'Yes' to continue and 'No' to go back." --radiolist --column Select --column Option TRUE yes FALSE no)
         touch root_part.txt
-        if [ "$SYSTEM" = "BIOS" ]
-	then echo {$dev}1 >> root_part.txt
-	else echo {$dev}2 >> root_part.txt
+        echo {$dev}3 >> root_part.txt
         fi 
 	if [ "$yn" = "no" ]
 	then partition
@@ -351,6 +349,13 @@ elif [ "$kernel" = "linux-zen" ]
 
 fi
 
+#installing shell
+echo "# Installing Shell...:
+if [ "$shell" = "zsh" ]
+then pacstrap /mnt zsh grml-zsh-config
+else pacstrap /mnt $shell
+fi
+
 #generating fstab
 echo "# Generating File System Table..."
 genfstab -p /mnt >> /mnt/etc/fstab
@@ -368,7 +373,7 @@ rm .passwd
 
 #adding user
 echo "# Making new user..."
-arch_chroot "useradd -m -g users -G adm,lp,wheel,power,audio,video -s /bin/bash $username"
+arch_chroot "useradd -m -g users -G adm,lp,wheel,power,audio,video -s /bin/$shell $username"
 touch .passwd
 echo -e "$userpasswd\n$userpasswd2" > .passwd
 arch_chroot "passwd $username" < .passwd >/dev/null
@@ -472,12 +477,6 @@ if [ "$aur" = "yes" ]
 	then arch_chroot "pacman -Syy"
 	arch_chroot "pacman -S --noconfirm pacaur"
 
-fi
-
-#selecting shell
-if [ "$shell" = "zsh" ]
-then arch_chroot "sudo pacman -S --noconfirm zsh zsh-syntax-highlighting zsh-completions grml-zsh-config;chsh -s /usr/bin/zsh"
-else arch_chroot "sudo pacman -S --noconfirm $shell;chsh -s /usr/bin/$shell"
 fi
 
 # installing bootloader
