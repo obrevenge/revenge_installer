@@ -427,7 +427,8 @@ pacstrap /mnt $desktop
 
 # cups
 if [ "$print" = "yes" ]
-	then pacstrap /mnt cups ghostscript gsfonts
+	then pacstrap /mnt ghostscript gsfonts system-config-printer gtk3-print-backends cups cups-pdf cups-filters
+arch_chroot "systemctl enable org.cups.cupsd.service"
 fi
 
 # starting desktop manager
@@ -463,13 +464,15 @@ fi
 
 # installing pamac-aur
 if [ "$pamac" = "yes" ]
-then arch_chroot "pacman -Syy"
+then echo "[spooky_aur]" >> /mnt/etc/pacman.conf;echo "SigLevel = Optional TrustAll" >> /mnt/etc/pacman.conf;echo "Server = https://raw.github.com/spookykidmm/spooky_aur/master/x86_64" >> /mnt/etc/pacman.conf
+arch_chroot "pacman -Syy"
 arch_chroot "pacman -S --noconfirm pamac-aur"
 fi
 
 # AUR
 if [ "$aur" = "yes" ]
-	then arch_chroot "pacman -Syy"
+	then echo "[spooky_aur]" >> /mnt/etc/pacman.conf;echo "SigLevel = Optional TrustAll" >> /mnt/etc/pacman.conf;echo "Server = https://raw.github.com/spookykidmm/spooky_aur/master/x86_64" >> /mnt/etc/pacman.conf 
+    arch_chroot "pacman -Syy"
 	arch_chroot "pacman -S --noconfirm pacaur"
 
 fi
