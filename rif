@@ -501,7 +501,7 @@ if [ "$grub" = "yes" ]
 		[[ $(echo $root_part | grep "/dev/mapper/") != "" ]] && bl_root=$root_part \
 		|| bl_root=$"PARTUUID="$(blkid -s PARTUUID ${root_part} | sed 's/.*=//g' | sed 's/"//g')
 
-		bootctl --path=/boot install
+		arch_chroot "bootctl --path=/boot install"
 		echo -e "default  Arch\ntimeout  10" > /mnt/boot/loader/loader.conf
 		[[ -e /mnt/boot/initramfs-linux.img ]] && echo -e "title\tArch Linux\nlinux\t/vmlinuz-linux\ninitrd\t/initramfs-linux.img\noptions\troot=${bl_root} rw" > /mnt/boot/loader/entries/Arch.conf
 		[[ -e /mnt/boot/initramfs-linux-lts.img ]] && echo -e "title\tArchLinux LTS\nlinux\t/vmlinuz-linux-lts\ninitrd\t/initramfs-linux-lts.img\noptions\troot=${bl_root} rw" > /mnt/boot/loader/entries/Arch-lts.conf
