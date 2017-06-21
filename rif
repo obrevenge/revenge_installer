@@ -495,7 +495,7 @@ if [ "$grub" = "yes" ]
 
 
 		if [ "$ans" = "Automatic Partitioning" ]
-			then root_part=${dev}3
+			then root_part=${dev}2
 		fi
 
 		[[ $(echo $root_part | grep "/dev/mapper/") != "" ]] && bl_root=$root_part \
