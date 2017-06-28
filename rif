@@ -303,20 +303,18 @@ sed -i -e 's/[|]//g' utils.txt
 # allowing user to select extra applications
 libreoffice() {
 lo=$(zenity --question --title="$title" --text="Would you like to install libreoffice, an open source ms office alternative?")
-}
-
-firefox() {
-ff=$(zenity --question --title="$title" --text="Would you like to install Firefox, a browser by the Mozilla foundation?")
-}
-
-if [ "$ff" = "$1" ]
-then fflang=$(zenity --list --radiolist --column Select --column Langpack $(cat /ff.txt))
-fi
-
 if [ "$lo" = "$1" ]
 lover=$(zenity --list --radiolist --text="Libreoffice-fresh is the newest up-to-date version of libreoffice, while still is less frequently updated" --column Select --column Version FALSE fresh FALSE still)
 then lolang=$(zenity --list --radiolist --column Select --column Langpack $(cat /lo"$lover".txt))
 fi
+}
+
+firefox() {
+ff=$(zenity --question --title="$title" --text="Would you like to install Firefox, a browser by the Mozilla foundation?")
+if [ "$ff" = "$1" ]
+then fflang=$(zenity --list --radiolist --column Select --column Langpack $(cat /ff.txt))
+fi
+}
 
 installapps() {
 extra=$(zenity --list --height=300 --title="$title" --radiolist --text "If you would like to select more applications to install,\nChoose the category from the list below.\nWhen you are finished selecting applications\nin each category you will be returned to this menu.\nThen simply select 'finished' when you are finished." --column Select --column Category FALSE internet FALSE media FALSE office FALSE utilities FALSE finished)
