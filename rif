@@ -1,4 +1,4 @@
-#!/bin/sh
+﻿#!/bin/sh
 
 # Revenge Installer Framework version 0.06
 #
@@ -611,8 +611,8 @@ archuserrepo
 cups
 displaymanager
 desktop
-installapps
-libreoffice
 firefox
+libreoffice
+installapps
 bootloader
 installing
