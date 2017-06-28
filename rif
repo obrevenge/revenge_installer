@@ -96,7 +96,7 @@ auto_partition() {
 
 	dev=$(zenity --list --title="$title" --radiolist --text "Select the drive that you want to use for installation." --column Drive --column Info $devices)
 
-	yn=$(zenity --list --title="$title" --text "Warning! This will erase all data on $dev\!\nAre you sure you want to continue?\nSelect 'Yes' to continue and 'No' to go back." --radiolist --column Select --column Option TRUE yes FALSE no)
+	yn=$(zenity --question --title="$title" --text "Warning! This will erase all data on $dev\!\nAre you sure you want to continue?\nSelect 'Yes' to continue and 'No' to go back.")
         touch root_part.txt
         if [ "$SYSTEM" = "BIOS" ]
 	then echo {$dev}1 >> root_part.txt
@@ -175,10 +175,17 @@ locales=$(cat /etc/locale.gen | grep -v "#  " | sed 's/#//g' | sed 's/ UTF-8//g'
 
 locale=$(zenity --list --title="$title" --radiolist --text "Select your locale/language.\nThe default is American English 'en_US.UTF-8'." --column Select --column Locale TRUE en_US.UTF-8 $locales --height=350 --width=300)
 
-# Getting Keyboard Config
-keymaps=("TRUE us FALSE af FALSE al FALSE am FALSE at FALSE az FALSE ba FALSE bd FALSE be FALSE bg FALSE br FALSE bt FALSE bw FALSE by FALSE ca FALSE cd FALSE ch FALSE cm FALSE cn FALSE cz FALSE de FALSE dk FALSE ee FALSE es FALSE et FALSE eu FALSE fi FALSE fo FALSE fr FALSE gb FALSE ge FALSE gh FALSE gn FALSE gr FALSE hr FALSE hu FALSE ie FALSE il FALSE in FALSE iq FALSE ir FALSE is FALSE it FALSE jp FALSE ke FALSE kg FALSE kh FALSE kr FALSE kz FALSE la FALSE lk FALSE lt FALSE lv FALSE ma FALSE md FALSE me FALSE mk FALSE ml FALSE mm FALSE mn FALSE mt FALSE mv FALSE ng FALSE nl FALSE no FALSE np FALSE pc FALSE ph FALSE pk FALSE pl FALSE pt FALSE ro FALSE rs FALSE ru FALSE se FALSE si FALSE sk FALSE sn FALSE sy FALSE tg FALSE th FALSE tj FALSE tm FALSE tr FALSE tw FALSE tz FALSE ua FALSE uz FALSE vn FALSE za")
+keyz=$(zenity --question --title="$title" --text="Would you like to change your keyboard model? The default is pc105")
+if [ "$keyz" = "$1" ]
+then model=$(zenity --list --title="$title" --radiolist --text="Select your keyboard model" --column Select --column Model $(localectl list-x11-keymap-models))
+fi
 
-keymap=$(zenity --list --title="$title" --radiolist --text "Select your keyboard layout for the installed system.\nThe default is American 'us'." --column Select --column Locale $keymaps --height=350 --width=300)
+layout=$(zenity --list --title="$title" --radiolist --text="Select your layout, a two-character country code" --column Select --column Layout $(localectl list-x11-keymap-layouts))
+
+var=$(zenity --question --title="$title" --text="Would you like to change your keyboard variant?")
+if [ "vars" = "$1" ]
+then variant=$(zenity --list --title="$title" --radiolist --text="Select your preferred variant" --column Select --column Variant $(localectl list-x11-keymap-variants))
+fi
 
 # Getting Timezone
 zones=$(cat /usr/share/zoneinfo/zone.tab | awk '{print $3}' | grep "/" | sed "s/\/.*//g" | sort -ud | sort | awk '{ printf " FALSE ""\0"$0"\0" }')
@@ -201,7 +208,7 @@ username=$(zenity --entry --title="$title" --text "Please enter a username for t
 vbox() {
 graphics=$(lspci | grep -i "vga" | sed 's/.*://' | sed 's/(.*//' | sed 's/^[ \t]*//')
 if [[ $(echo $graphics | grep -i 'virtualbox') != "" ]]
-	then vbox=$(zenity --list --title="$title" --radiolist --text "The Revenge Installer has detected that you are currently running in Virtualbox.\nWould you like to install Virtualbox Utilities to the installed system?" --column Select --column Choice TRUE yes FALSE no)
+	then vbox=$(zenity --question --title="$title" --text "The Revenge Installer has detected that you are currently running in Virtualbox.\nWould you like to install Virtualbox Utilities to the installed system?")
 fi
 }
 
@@ -209,8 +216,8 @@ nvidia() {
 graphics=$(lspci | grep -i "vga" | sed 's/.*://' | sed 's/(.*//' | sed 's/^[ \t]*//')
 card=$(lspci -k | grep -A 2 -E "(VGA|3D)")
 if [[ $(echo $card | grep -i 'nvidia') != "" ]]
-	then nvidia=$(zenity --list --title="$title" --radiolist --text "The Revenge Installer has detected that you are currently running an Nvidia graphics card.\nWould you like to install Proprietary Nvidia graphics drivers to the installed system?" --column Select --column Choice FALSE yes FALSE no)
-		if [ "nvidia" = "yes" ]
+	then nvidia=$(zenity --list --title="$title" --text "The Revenge Installer has detected that you are currently running an Nvidia graphics card.\nWould you like to install Proprietary Nvidia graphics drivers to the installed system?")
+		if [ "nvidia" = "$1" ]
 			then video=$(zenity --list --height=400 --title="$title" --text "You will need to know what model of NVIDIA gaphics card you are using.\nFor NVIDIA 400 series and newer install nvidia and nvidia-libgl.\nFor 8000-9000 or 100-300 series install nvidia-304xx and nvidia-304xx-libgl.\n\nYour current graphics card is:\n$card\n\nSelect the NVIDIA drivers that you would like to install." --checklist --column "Select" --column "Driver" FALSE "nvidia nvidia-libgl nvidia-settings" FALSE "nvidia-304xx nvidia-304xx-libgl nvidia-settings")
 			else video="mesa xf86-video-nouveau"
 		fi
@@ -245,7 +252,7 @@ userpasswd2=$(zenity --entry --title="$title" --text "Please re-enter a password
 }
 
 cups() {
-print=$(zenity --list --title="$title" --radiolist --text "Would you like to install printer support?" --column Select --column Choice FALSE "yes" FALSE "no")
+print=$(zenity --question --title="$title" --radiolist --text "Would you like to install printer support?")
 }
 
 desktop() {
@@ -258,32 +265,32 @@ dm=$(zenity --list --title="$title" --radiolist --text "What display manager wou
 }
 
 revengerepo() {
-repo=$(zenity --list --title="$title" --radiolist --text "Would you like to add the revenge_repo to your /etc/pacman.conf? The revenge_repo contains a few extra packages, such as spotify and pamac." --column "Select" --column "Choice" TRUE yes FALSE no)
+repo=$(zenity --question --title="$title" --text "Would you like to add the revenge_repo to your /etc/pacman.conf? The revenge_repo contains a few extra packages, such as spotify and pamac.")
 }
 
 pamacaur() {
-pamac=$(zenity --list --title="$title" --radiolist --text "Would you like to install pamac, a GUI tool to install packages from the repo and the aur?" --column "Select" --column "Choice" TRUE yes FALSE no)
+pamac=$(zenity --list --title="$title" --text "Would you like to install pamac, a GUI tool to install packages from the repo and the aur?")
 }
 
 archuserrepo() {
-aur=$(zenity --list --title="$title" --radiolist --text "Would you like to install support for the Arch User Repository 'pacaur'?" --column "Select" --column "Choice" TRUE yes FALSE no)
+aur=$(zenity --question --title="$title" --text "Would you like to install support for the Arch User Repository 'pacaur'?")
 }
 
 # internet app list
 internet_apps() {
-zenity --list --title="$title" --text "Select the Internet Applications that You Would Like to Install" --checklist --column "Select" --column "Applications" FALSE "firefox " FALSE "chromium " FALSE "midori " FALSE "qupzilla " FALSE "netsurf " FALSE "filezilla " FALSE "opera " FALSE "evolution " FALSE "geary " FALSE "thunderbird " FALSE "transmission-gtk " FALSE "qbittorrent " FALSE "hexchat " --height 400 > int2.txt
+zenity --list --title="$title" --text "Select the Internet Applications that You Would Like to Install" --checklist --column "Select" --column "Applications" FALSE "chromium " FALSE "midori " FALSE "qupzilla " FALSE "netsurf " FALSE "filezilla " FALSE "opera " FALSE "evolution " FALSE "geary " FALSE "thunderbird " FALSE "transmission-gtk " FALSE "qbittorrent " FALSE "hexchat " --height 400 > int2.txt
 sed -i -e 's/[|]//g' int2.txt
 }
 
 # media app list
 media_apps() {
-zenity --list --title="$title" --text "Select the Media Applications that You Would Like to Install" --checklist --column "Select" --column "Applications" FALSE "gimp " FALSE "vlc " FALSE "totem " FALSE "parole " FALSE "audacious " FALSE "clementine " FALSE "gthumb " FALSE "shotwell " FALSE "ristretto " FALSE "gpicview " FALSE "brasero " FALSE "audacity " FALSE "simplescreenrecorder " FALSE "xfburn " FALSE "kdenlive " --height 400 > med2.txt
+zenity --list --title="$title" --text "Select the Media Applications that You Would Like to Install" --checklist --column "Select" --column "Applications" FALSE "kodi "FALSE "gimp " FALSE "vlc " FALSE "totem " FALSE "parole " FALSE "audacious " FALSE "clementine " FALSE "gthumb " FALSE "shotwell " FALSE "ristretto " FALSE "gpicview " FALSE "brasero " FALSE "audacity " FALSE "simplescreenrecorder " FALSE "xfburn " FALSE "kdenlive " --height 400 > med2.txt
 sed -i -e 's/[|]//g' med2.txt
 }
 
 # office app list
 office_apps() {
-zenity --list --title="$title" --text "Select the Office Applications that You Would Like to Install" --checklist --column "Select" --column "Applications" FALSE "libreoffice-fresh " FALSE "calligra " FALSE "abiword " FALSE "gnumeric " FALSE "pdfmod " FALSE "evince " FALSE "epdfview " FALSE "calibre " FALSE "fbreader " --height 400 > off2.txt
+zenity --list --title="$title" --text "Select the Office Applications that You Would Like to Install" --checklist --column "Select" --column "Applications" FALSE "calligra " FALSE "abiword " FALSE "gnumeric " FALSE "pdfmod " FALSE "evince " FALSE "epdfview " FALSE "calibre " FALSE "fbreader " --height 400 > off2.txt
 sed -i -e 's/[|]//g' off2.txt
 }
 
@@ -294,6 +301,23 @@ sed -i -e 's/[|]//g' utils.txt
 }
 
 # allowing user to select extra applications
+libreoffice() {
+lo=$(zenity --question --title="$title" --text="Would you like to install libreoffice, an open source ms office alternative?")
+}
+
+firefox() {
+ff=$(zenity --question --title="$title" --text="Would you like to install Firefox, a browser by the Mozilla foundation?")
+}
+
+if [ "$ff" = "$1" ]
+then fflang=$(zenity --list --radiolist --column Select --column Langpack $(cat ff.txt))
+fi
+
+if [ "$lo" = "$1" ]
+lover=$(zenity --list --radiolist --text="Libreoffice-fresh is the newest up-to-date version of libreoffice, while still is less frequently updated" --column Select --column Version FALSE fresh FALSE still)
+then lolang=$(zenity --list --radiolist --column Select --column Langpack $(cat lo"$lover".txt))
+fi
+
 installapps() {
 extra=$(zenity --list --height=300 --title="$title" --radiolist --text "If you would like to select more applications to install,\nChoose the category from the list below.\nWhen you are finished selecting applications\nin each category you will be returned to this menu.\nThen simply select 'finished' when you are finished." --column Select --column Category FALSE internet FALSE media FALSE office FALSE utilities FALSE finished)
 
@@ -314,8 +338,8 @@ lsblk -lno NAME,TYPE | grep 'disk' | awk '{print "/dev/" $1 " " $2}' | sort -u >
 sed -i 's/\<disk\>//g' devices.txt
 devices=` awk '{print "FALSE " $0}' devices.txt `
 
-grub=$(zenity --list --title="$title" --text "Would you like to install the bootloader?\nThe answer to this is usually yes,\nunless you are dual-booting and plan to have another system handle\nthe boot process." --radiolist --column Select --column Choice FALSE "yes" FALSE "no")
-if [ "$grub" = "yes" ]
+grub=$(zenity --question --title="$title" --text "Would you like to install the bootloader?\nThe answer to this is usually yes,\nunless you are dual-booting and plan to have another system handle\nthe boot process.")
+if [ "$grub" = "$1" ]
 	then grub_device=$(zenity --list --title="$title" --text "Where do you want to install the bootloader?" --radiolist --column Select --column Device $devices)
 fi
 }
@@ -382,7 +406,15 @@ arch_chroot "locale-gen"
 export LANG=${locale}
 
 #setting keymap
-arch_chroot "localectl set-keymap $keymap"
+if [ "$keyz" = "$1" ]
+then arch_chroot "localectl --no-convert set-x11-keymap " " "$model" ," " " ""
+fi
+
+arch_chroot "localectl --no-convert set-x11-keymap "$layout" " "," " " ""
+
+if [ "$var" = "$1" ]
+then arch_chroot "localectl --no-convert set-x11-keymap " " " " , "$variant" " ""
+fi
 
 #setting timezone
 echo "# Setting Timezone..."
@@ -405,7 +437,7 @@ echo "# Installing Desktop, Sound, and Video Drivers..."
 pacstrap /mnt  mesa xf86-video-nouveau xf86-video-vesa xf86-video-voodoo xf86-video-dummy xf86-video-vmware xf86-video-ati xf86-video-fbdev xf86-video-intel xf86-video-openchrome xf86-video-sisusb xf86-video-amdgpu xorg-server xorg-apps xorg-xinit xorg-twm xterm alsa-utils pulseaudio pulseaudio-alsa xf86-input-synaptics xf86-input-keyboard xf86-input-mouse xf86-input-libinput intel-ucode b43-fwcutter networkmanager nm-connection-editor network-manager-applet polkit-gnome gksu ttf-dejavu gnome-keyring xdg-user-dirs gvfs
 
 # virtualbox
-if [ "$vbox" = "yes" ]
+if [ "$vbox" = "$1" ]
 	then
 	if [ "$kernel" = "linux" ]
 		then pacstrap /mnt virtualbox-guest-modules-arch virtualbox-guest-utils
@@ -426,7 +458,7 @@ fi
 pacstrap /mnt $desktop
 
 # cups
-if [ "$print" = "yes" ]
+if [ "$print" = "$1" ]
 	then pacstrap /mnt ghostscript gsfonts system-config-printer gtk3-print-backends cups cups-pdf cups-filters
 arch_chroot "systemctl enable org.cups.cupsd.service"
 fi
@@ -457,34 +489,34 @@ fi
 arch_chroot "systemctl enable NetworkManager"
 
 # adding revenge_repo
-if [ "$repo" = "yes"  ]
+if [ "$repo" = "$1"  ]
 then echo "[revenge_repo]" >> /mnt/etc/pacman.conf;echo "SigLevel = Optional TrustAll" >> /mnt/etc/pacman.conf;echo "Server = https://raw.github.com/obrevenge/revenge_repo/master/x86_64" >> /mnt/etc/pacman.conf;echo "Server = https://downloads.sourceforge.net/project/revenge-repo/revenge_repo/x86_64" >> /mnt/etc/pacman.conf;echo "Server = ftp://ftp.heanet.ie/mirrors/sourceforge/r/re/revenge-repo/revenge_repo/x86_64" >> /mnt/etc/pacman.conf
 arch_chroot "sudo pacman -Syy"
 fi
 
 # installing pamac-aur
-if [ "$pamac" = "yes" ]
+if [ "$pamac" = "$1" ]
 then echo "[spooky_aur]" >> /mnt/etc/pacman.conf;echo "SigLevel = Optional TrustAll" >> /mnt/etc/pacman.conf;echo "Server = https://raw.github.com/spookykidmm/spooky_aur/master/x86_64" >> /mnt/etc/pacman.conf
 arch_chroot "pacman -Syy"
 arch_chroot "pacman -S --noconfirm pamac-aur"
 fi
 
 # AUR
-if [ "$aur" = "yes" ]
+if [ "$aur" = "$1" ]
 	then echo "[spooky_aur]" >> /mnt/etc/pacman.conf;echo "SigLevel = Optional TrustAll" >> /mnt/etc/pacman.conf;echo "Server = https://raw.github.com/spookykidmm/spooky_aur/master/x86_64" >> /mnt/etc/pacman.conf 
     arch_chroot "pacman -Syy"
 	arch_chroot "pacman -S --noconfirm pacaur"
 
 fi
 
-#selecting shell
+# selecting shell
 if [ "$shell" = "zsh" ]
 then arch_chroot "sudo pacman -S --noconfirm zsh zsh-syntax-highlighting zsh-completions grml-zsh-config;chsh -s /usr/bin/zsh $username"
 else arch_chroot "sudo pacman -S --noconfirm $shell;chsh -s /usr/bin/$shell"
 fi
 
 # installing bootloader
-if [ "$grub" = "yes" ]
+if [ "$grub" = "$1" ]
 	then if [ "$SYSTEM" = 'BIOS' ]
 		then echo "# Installing Bootloader..."
 		pacstrap /mnt grub
@@ -527,6 +559,8 @@ utils=` cat utils.txt `
 # Installing Selecting Applications
 arch_chroot "pacman -Syy"
 arch_chroot "pacman -S --noconfirm $int $med $off $utils"
+arch_chroot "pacman -S libreoffice-"$lover" "$lolang""
+arch_chroot "pacman -S firefox  "$fflang""
 
 # unmounting partitions
 umount -R /mnt
@@ -578,5 +612,7 @@ cups
 displaymanager
 desktop
 installapps
+libreoffice
+firefox
 bootloader
 installing
