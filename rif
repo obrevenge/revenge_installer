@@ -284,7 +284,7 @@ sed -i -e 's/[|]//g' int2.txt
 
 # media app list
 media_apps() {
-zenity --list --title="$title" --text "Select the Media Applications that You Would Like to Install" --checklist --column "Select" --column "Applications" FALSE "kodi "FALSE "gimp " FALSE "vlc " FALSE "totem " FALSE "parole " FALSE "audacious " FALSE "clementine " FALSE "gthumb " FALSE "shotwell " FALSE "ristretto " FALSE "gpicview " FALSE "brasero " FALSE "audacity " FALSE "simplescreenrecorder " FALSE "xfburn " FALSE "kdenlive " --height 400 > med2.txt
+zenity --list --title="$title" --text "Select the Media Applications that You Would Like to Install" --checklist --column "Select" --column "Applications" FALSE "kodi " FALSE "gimp " FALSE "vlc " FALSE "totem " FALSE "parole " FALSE "audacious " FALSE "clementine " FALSE "gthumb " FALSE "shotwell " FALSE "ristretto " FALSE "gpicview " FALSE "brasero " FALSE "audacity " FALSE "simplescreenrecorder " FALSE "xfburn " FALSE "kdenlive " --height 400 > med2.txt
 sed -i -e 's/[|]//g' med2.txt
 }
 
