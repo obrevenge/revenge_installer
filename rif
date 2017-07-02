@@ -14,6 +14,7 @@
 #
 #
 # Selecting the Drive
+cp keyz.txt /
 man_partition() {
 list=` lsblk -lno NAME,TYPE,SIZE,MOUNTPOINT | grep "disk" `
 
@@ -305,14 +306,14 @@ libreoffice() {
 lo=$(zenity --question --title="$title" --text="Would you like to install libreoffice, an open source ms office alternative?")
 if [ "$lo" = "$1" ]
 lover=$(zenity --list --radiolist --text="Libreoffice-fresh is the newest up-to-date version of libreoffice, while still is less frequently updated" --column Select --column Version FALSE fresh FALSE still)
-then lolang=$(zenity --list --radiolist --column Select --column Langpack $(cat ~/revenge_installer/lo"$lover".txt))
+then lolang=$(zenity --list --radiolist --column Select --column Langpack $(cat /lo"$lover".txt))
 fi
 }
 
 firefox() {
 ff=$(zenity --question --title="$title" --text="Would you like to install Firefox, a browser by the Mozilla foundation?")
 if [ "$ff" = "$1" ]
-then fflang=$(zenity --list --radiolist --column Select --column Langpack $(cat ~/revenge_installer/ff.txt))
+then fflang=$(zenity --list --radiolist --column Select --column Langpack $(cat /ff.txt))
 fi
 }
 
