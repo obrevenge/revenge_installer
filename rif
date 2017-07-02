@@ -181,7 +181,7 @@ if [ "$keyz" = "$1" ]
 then model=$(zenity --list --title="$title" --radiolist --text="Select your keyboard model" --column Select --column Model $(localectl list-x11-keymap-models))
 fi
 
-layout=$(zenity --list --title="$title" --radiolist --text="Select your layout, a two-character country code" --column Select --column Layout $(localectl list-x11-keymap-layouts))
+layout=$(zenity --list --title="$title" --radiolist --text="Select your layout, a two-character country code" --column Select --column Layout $(cat /keyz.txt))
 
 var=$(zenity --question --title="$title" --text="Would you like to change your keyboard variant?")
 if [ "vars" = "$1" ]
@@ -412,7 +412,7 @@ fi
 arch_chroot "localectl --no-convert set-x11-keymap "$layout" " "," " " ""
 
 if [ "$var" = "$1" ]
-then arch_chroot "localectl --no-convert set-x11-keymap " " " " , "$variant" " ""
+then arch_chroot "localectl --no-convert set-x11-keymap " " " " ,"$variant" " ""
 fi
 
 #setting timezone
