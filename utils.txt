@@ -1,0 +1,1 @@
+terminator leafpad parcellite ntfs-3g btrfs-progs gptfdisk 

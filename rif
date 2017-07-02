@@ -178,14 +178,14 @@ locale=$(zenity --list --title="$title" --radiolist --text "Select your locale/l
 
 keyz=$(zenity --question --title="$title" --text="Would you like to change your keyboard model? The default is pc105")
 if [ "$keyz" = "$1" ]
-then model=$(zenity --list --title="$title" --radiolist --text="Select your keyboard model" --column Select --column Model $(localectl list-x11-keymap-models))
+then model=$(zenity --list --title="$title" --radiolist --text="Select your keyboard model" --column Select --column Model $(localectl list-x11-keymap-models | awk '{ printf " FALSE ""\0"$0"\0" }'))
 fi
 
-layout=$(zenity --list --title="$title" --radiolist --text="Select your layout, a two-character country code" --column Select --column Layout $(cat /keyz.txt))
+layout=$(zenity --list --title="$title" --radiolist --text="Select your layout, a two-character country code" --column Select --column Layout $(localectl list-x11-keymap-layouts | awk '{ printf " FALSE ""\0"$0"\0" }'))
 
 var=$(zenity --question --title="$title" --text="Would you like to change your keyboard variant?")
-if [ "vars" = "$1" ]
-then variant=$(zenity --list --title="$title" --radiolist --text="Select your preferred variant" --column Select --column Variant $(localectl list-x11-keymap-variants))
+if [ "$var" = "$1" ]
+then variant=$(zenity --list --title="$title" --radiolist --text="Select your preferred variant" --column Select --column Variant $(localectl list-x11-keymap-variants | awk '{ printf " FALSE ""\0"$0"\0" }') )
 fi
 
 # Getting Timezone
@@ -270,7 +270,7 @@ repo=$(zenity --question --title="$title" --text "Would you like to add the reve
 }
 
 pamacaur() {
-pamac=$(zenity --list --title="$title" --text "Would you like to install pamac, a GUI tool to install packages from the repo and the aur?")
+pamac=$(zenity --question --title="$title" --text "Would you like to install pamac, a GUI tool to install packages from the repo and the aur?")
 }
 
 archuserrepo() {
@@ -305,7 +305,7 @@ sed -i -e 's/[|]//g' utils.txt
 libreoffice() {
 lo=$(zenity --question --title="$title" --text="Would you like to install libreoffice, an open source ms office alternative?")
 if [ "$lo" = "$1" ]
-lover=$(zenity --list --radiolist --text="Libreoffice-fresh is the newest up-to-date version of libreoffice, while still is less frequently updated" --column Select --column Version FALSE fresh FALSE still)
+lover=$(zenity --list --radiolist --text="Libreoffice-fresh is the newest up-to-date version of libreoffice, while still is less frequently updated" --column Select --column Version FALSE "fresh" FALSE "still")
 then lolang=$(zenity --list --radiolist --column Select --column Langpack $(cat /lo"$lover".txt))
 fi
 }
@@ -347,7 +347,7 @@ fi
 installing() {
 zenity --question --title="$title" --text "Please click yes to begin installation.\nClick no to abort installation.\nAll of the packages will be downloaded fresh, so installation\nmay take a few minutes." --height=40
 
-if [ "$?" = "1" ]
+if [ "$?" = "$1" ]
 	then exit
 fi
 
@@ -405,15 +405,8 @@ arch_chroot "locale-gen"
 export LANG=${locale}
 
 #setting keymap
-if [ "$keyz" = "$1" ]
-then arch_chroot "localectl --no-convert set-x11-keymap " " "$model" ," " " ""
-fi
-
-arch_chroot "localectl --no-convert set-x11-keymap "$layout" " "," " " ""
-
-if [ "$var" = "$1" ]
-then arch_chroot "localectl --no-convert set-x11-keymap " " " " ,"$variant" " ""
-fi
+mkdir -p /mnt/etc/X11/xorg.conf.d/
+echo -e 'Section "InputClass"\n	Identifier "system-keyboard"\n	MatchIsKeyboard "on"\n	Option "XkbLayout" "'$layout'"\n	Option "XkbModel" "'$model'"\n	Option "XkbVariant" ",'$variant'"\n	 Option "XkbOptions" "grp:alt_shift_toggle"\nEndSection' > /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
 
 #setting timezone
 echo "# Setting Timezone..."
@@ -457,7 +450,7 @@ fi
 pacstrap /mnt $desktop
 
 # cups
-if [ "$print" = "$1" ]
+if [ "$print" = "$0" ]
 	then pacstrap /mnt ghostscript gsfonts system-config-printer gtk3-print-backends cups cups-pdf cups-filters
 arch_chroot "systemctl enable org.cups.cupsd.service"
 fi
@@ -558,8 +551,8 @@ utils=` cat utils.txt `
 # Installing Selecting Applications
 arch_chroot "pacman -Syy"
 arch_chroot "pacman -S --noconfirm $int $med $off $utils"
-arch_chroot "pacman -S libreoffice-"$lover" "$lolang""
-arch_chroot "pacman -S firefox  "$fflang""
+arch_chroot "pacman -S libreoffice-$lover $lolang"
+arch_chroot "pacman -S --noconfirm firefox  $fflang"
 
 # unmounting partitions
 umount -R /mnt
