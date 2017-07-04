@@ -306,7 +306,7 @@ libreoffice() {
 lo=$(zenity --question --title="$title" --text="Would you like to install libreoffice, an open source ms office alternative?")
 if [ "$lo" = "$1" ]
 lover=$(zenity --list --radiolist --text="Libreoffice-fresh is the newest up-to-date version of libreoffice, while still is less frequently updated" --column Select --column Version FALSE "fresh" FALSE "still")
-then lolang=$(zenity --list --radiolist --column Select --column Langpack $(cat /lo'$lover'.txt | awk '{ printf " FALSE ""\0"$0"\0" }'))
+then lolang=$(zenity --list --radiolist --column Select --column Langpack $(cat /lo$lover.txt | awk '{ printf " FALSE ""\0"$0"\0" }'))
 fi
 }
 
