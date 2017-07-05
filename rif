@@ -313,7 +313,7 @@ fi
 firefox() {
 ff=$(zenity --question --title="$title" --text="Would you like to install Firefox, a browser by the Mozilla foundation?")
 if [ "$ff" = "$1" ]
-then fflang=$(zenity --list --radiolist --column Select --column Langpack $(cat /ff.txt  | awk '{ printf " FALSE ""\0"$0"\0" }')))
+then fflang=$(zenity --list --radiolist --column Select --column Langpack $(cat /ff.txt  | awk '{ printf " FALSE ""\0"$0"\0" }'))
 fi
 }
 
