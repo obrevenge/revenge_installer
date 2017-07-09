@@ -218,8 +218,8 @@ vbox() {
 graphics=$(lspci | grep -i "vga" | sed 's/.*://' | sed 's/(.*//' | sed 's/^[ \t]*//')
 if [[ $(echo $graphics | grep -i 'virtualbox') != "" ]]
 	then vbox=$(zenity --question --title="$title" --text "The Revenge Installer has detected that you are currently running in Virtualbox.\nWould you like to install Virtualbox Utilities to the installed system?")
-fi
 vb="$?"
+fi
 }
 
 nvidia() {
@@ -228,7 +228,7 @@ card=$(lspci -k | grep -A 2 -E "(VGA|3D)")
 if [[ $(echo $card | grep -i 'nvidia') != "" ]]
 	then nvidia=$(zenity --question --title="$title" --text "The Revenge Installer has detected that you are currently running an Nvidia graphics card.\nWould you like to install Proprietary Nvidia graphics drivers to the installed system?")
 		if [ "$?" = "0" ]
-			then video=$(zenity --list --height=400 --title="$title" --text "You will need to know what model of NVIDIA gaphics card you are using.\nFor NVIDIA 400 series and newer install nvidia and nvidia-libgl.\nFor 8000-9000 or 100-300 series install nvidia-304xx and nvidia-304xx-libgl.\n\nYour current graphics card is:\n$card\n\nSelect the NVIDIA drivers that you would like to install." --checklist --column "Select" --column "Driver" FALSE "nvidia nvidia-libgl nvidia-settings" FALSE "nvidia-304xx nvidia-304xx-libgl nvidia-settings")
+			then video=$(zenity --list --height=400 --title="$title" --text "You will need to know what model of NVIDIA graphics card you are using.\nFor NVIDIA 400 series and newer install nvidia and nvidia-libgl.\nFor 8000-9000 or 100-300 series install nvidia-304xx and nvidia-304xx-libgl.\n\nYour current graphics card is:\n$card\n\nSelect the NVIDIA drivers that you would like to install." --checklist --column "Select" --column "Driver" FALSE "nvidia nvidia-libgl nvidia-settings" FALSE "nvidia-304xx nvidia-304xx-libgl nvidia-settings")
 			else video="mesa xf86-video-nouveau"
 		fi
 	else video="mesa xf86-video-nouveau"
