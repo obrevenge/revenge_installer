@@ -206,7 +206,7 @@ subzones=$(cat /usr/share/zoneinfo/zone.tab | awk '{print $3}' | grep "$zone/" |
 subzone=$(zenity --list --title="$title" --radiolist --text "Select your sub-zone." --column Select --column Zone $subzones --height=350 --width=300)
 
 # Getting Clock Preference
-clock=$(zenity --list --title="$title" --radiolist --text "Would you like to use UTC or Local Time\nUTC is recommended unless you are dual booting with Windows." --column Select --column Time TRUE utc FALSE localtime)
+clock=$(zenity --list --title="$title" --radiolist --text "Would you like to use UTC or Local Time?\nUTC is recommended unless you are dual booting with Windows." --column Select --column Time TRUE utc FALSE localtime)
 
 # Getting hostname, username, root password, and user password
 hname=$(zenity --entry --title="$title" --text "Please enter a hostname for your system.\nIt must be in all lowercase letters." --entry-text "revenge")
